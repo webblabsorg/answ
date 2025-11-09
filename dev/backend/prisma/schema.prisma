@@ -1,0 +1,455 @@
+// Answly Database Schema
+// Phase 1: Foundation Models
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User Management
+// ============================================================================
+enum UserRole {
+  TEST_TAKER
+  INSTRUCTOR
+  REVIEWER
+  ADMIN
+  SUPPORT
+}
+
+enum SubscriptionTier {
+  STARTER
+  GROW
+  SCALE
+  ENTERPRISE
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  password_hash      String
+  name               String
+  role               UserRole            @default(TEST_TAKER)
+  tier               SubscriptionTier    @default(STARTER)
+  is_verified        Boolean             @default(false)
+  is_active          Boolean             @default(true)
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+  last_login_at      DateTime?
+  // Relations
+  test_sessions      TestSession[]
+  attempts           Attempt[]
+  bookmarks          Bookmark[]
+  notes              QuestionNote[]
+  audit_logs         AuditLog[]
+  generation_jobs    GenerationJob[]     @relation("CreatedJobs")
+  reviewed_questions GeneratedQuestion[] @relation("ReviewedQuestions")
+  conversations      Conversation[]
+  irt_profiles       IRTProfile[]
+
+  @@index([email])
+  @@index([role, tier])
+  @@map("users")
+}
+
+// ============================================================================
+// Exam Catalog
+// ============================================================================
+enum ExamCategory {
+  STANDARDIZED_TEST
+  PROFESSIONAL_CERT
+  LANGUAGE_TEST
+  REGIONAL_EXAM
+}
+
+model Exam {
+  id               String          @id @default(cuid())
+  name             String
+  code             String          @unique
+  category         ExamCategory
+  description      String?         @db.Text
+  duration_minutes Int
+  total_sections   Int
+  total_questions  Int
+  passing_score    Int?
+  is_active        Boolean         @default(true)
+  created_at       DateTime        @default(now())
+  updated_at       DateTime        @updatedAt
+  // Relations
+  sections         ExamSection[]
+  questions        Question[]
+  test_sessions    TestSession[]
+  generation_jobs  GenerationJob[]
+  conversations    Conversation[]
+  irt_profiles     IRTProfile[]
+
+  @@index([code])
+  @@index([category, is_active])
+  @@map("exams")
+}
+
+model ExamSection {
+  id               String     @id @default(cuid())
+  exam_id          String
+  name             String
+  section_order    Int
+  duration_minutes Int
+  question_count   Int
+  description      String?    @db.Text
+  created_at       DateTime   @default(now())
+  // Relations
+  exam             Exam       @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+  questions        Question[]
+
+  @@unique([exam_id, section_order])
+  @@index([exam_id])
+  @@map("exam_sections")
+}
+
+// ============================================================================
+// Question Bank
+// ============================================================================
+enum QuestionType {
+  MULTIPLE_CHOICE
+  MULTIPLE_SELECT
+  NUMERIC_INPUT
+  TEXT_INPUT
+  ESSAY
+  TRUE_FALSE
+}
+
+model Question {
+  id                    String             @id @default(cuid())
+  exam_id               String
+  section_id            String?
+  question_text         String             @db.Text
+  question_type         QuestionType
+  options               Json? // Array of {id, text, correct}
+  correct_answer        Json // Flexible structure based on type
+  difficulty_level      Int                @default(3) // 1-5 scale
+  topic                 String
+  subtopic              String?
+  skills                String[] // e.g., ["algebra", "problem-solving"]
+  explanation           String?            @db.Text
+  explanation_video_url String?
+  time_estimate_seconds Int                @default(90)
+  is_active             Boolean            @default(true)
+  // AI generation metadata
+  ai_generated          Boolean            @default(false)
+  generated_question_id String?            @unique
+  quality_score         Float?
+  // IRT parameters
+  irt_a                 Float?
+  irt_b                 Float?
+  irt_c                 Float?
+  calibration_sample    Int?
+  last_calibrated_at    DateTime?
+  created_at            DateTime           @default(now())
+  updated_at            DateTime           @updatedAt
+  // Relations
+  exam                  Exam               @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+  section               ExamSection?       @relation(fields: [section_id], references: [id], onDelete: SetNull)
+  generated_from        GeneratedQuestion? @relation("GeneratedFrom", fields: [generated_question_id], references: [id], onDelete: SetNull)
+  attempts              Attempt[]
+  bookmarks             Bookmark[]
+  notes                 QuestionNote[]
+
+  @@index([exam_id, topic])
+  @@index([exam_id, section_id])
+  @@index([difficulty_level])
+  @@index([is_active])
+  @@index([question_type])
+  @@index([created_at])
+  @@index([ai_generated])
+  @@index([irt_b])
+  @@map("questions")
+}
+
+// ============================================================================
+// Test Sessions
+// ============================================================================
+enum TestSessionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  GRADED
+  ABANDONED
+}
+
+model TestSession {
+  id               String            @id @default(cuid())
+  user_id          String
+  exam_id          String
+  status           TestSessionStatus @default(NOT_STARTED)
+  started_at       DateTime?
+  completed_at     DateTime?
+  submitted_at     DateTime?
+  duration_seconds Int?
+  // Scoring
+  total_questions  Int
+  total_attempted  Int               @default(0)
+  total_correct    Int?
+  raw_score        Float?
+  scaled_score     Float?
+  percentile       Float?
+  // Configuration
+  is_practice_mode Boolean           @default(false)
+  is_adaptive      Boolean           @default(false)
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  // Relations
+  user             User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  exam             Exam              @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+  attempts         Attempt[]
+
+  @@index([user_id, status])
+  @@index([user_id, created_at])
+  @@index([exam_id, created_at])
+  @@index([status])
+  @@index([completed_at])
+  @@map("test_sessions")
+}
+
+model Attempt {
+  id                 String      @id @default(cuid())
+  session_id         String
+  user_id            String
+  question_id        String
+  user_answer        Json? // Flexible structure based on question type
+  is_correct         Boolean?
+  time_spent_seconds Int?
+  is_flagged         Boolean     @default(false)
+  created_at         DateTime    @default(now())
+  updated_at         DateTime    @updatedAt
+  // Relations
+  session            TestSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  user               User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  question           Question    @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([session_id, question_id])
+  @@index([user_id])
+  @@index([session_id])
+  @@index([question_id])
+  @@index([is_correct])
+  @@map("attempts")
+}
+
+// ============================================================================
+// User Features
+// ============================================================================
+model Bookmark {
+  id          String   @id @default(cuid())
+  user_id     String
+  question_id String
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, question_id])
+  @@index([user_id])
+  @@map("bookmarks")
+}
+
+model QuestionNote {
+  id          String   @id @default(cuid())
+  user_id     String
+  question_id String
+  note_text   String   @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, question_id])
+  @@index([user_id])
+  @@map("question_notes")
+}
+
+// ============================================================================
+// Audit Logs
+// ============================================================================
+model AuditLog {
+  id          String   @id @default(cuid())
+  user_id     String
+  action      String
+  entity_type String
+  entity_id   String?
+  changes     Json?
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// AI & Machine Learning (Phase 2)
+// ============================================================================
+model AIUsageLog {
+  id            String   @id @default(cuid())
+  provider      String
+  task_type     String
+  model         String?
+  tokens_used   Int
+  cost          Float
+  latency_ms    Int
+  success       Boolean
+  is_fallback   Boolean  @default(false)
+  error_message String?
+  created_at    DateTime @default(now())
+
+  @@index([provider])
+  @@index([task_type])
+  @@index([created_at])
+  @@map("ai_usage_logs")
+}
+
+model PromptTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  version     String
+  content     String   @db.Text
+  description String?
+  task_type   String
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([name, version])
+  @@index([name, is_active])
+  @@map("prompt_templates")
+}
+
+enum GenerationJobStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model GenerationJob {
+  id                  String              @id @default(cuid())
+  exam_id             String
+  topic               String
+  subtopic            String?
+  difficulty          Int
+  count               Int
+  status              GenerationJobStatus @default(PENDING)
+  progress            Float               @default(0)
+  generated_count     Int                 @default(0)
+  failed_count        Int                 @default(0)
+  total_cost          Float               @default(0)
+  error_message       String?
+  started_at          DateTime?
+  completed_at        DateTime?
+  created_at          DateTime            @default(now())
+  created_by_id       String
+  exam                Exam                @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+  created_by          User                @relation(name: "CreatedJobs", fields: [created_by_id], references: [id])
+  generated_questions GeneratedQuestion[]
+
+  @@index([status])
+  @@index([exam_id])
+  @@index([created_at])
+  @@map("generation_jobs")
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+}
+
+model GeneratedQuestion {
+  id                  String        @id @default(cuid())
+  generation_job_id   String
+  question_text       String        @db.Text
+  question_type       QuestionType
+  options             Json?
+  correct_answer      Json
+  explanation         String?       @db.Text
+  topic               String
+  subtopic            String?
+  difficulty_level    Int           @default(3)
+  quality_score       Float?
+  validation_errors   String[]
+  validation_warnings String[]
+  status              ReviewStatus  @default(PENDING)
+  ai_provider         String
+  ai_model            String
+  prompt_template_id  String?
+  generation_cost     Float
+  reviewed_by_id      String?
+  review_notes        String?
+  approved_at         DateTime?
+  created_at          DateTime      @default(now())
+  generation_job      GenerationJob @relation(fields: [generation_job_id], references: [id], onDelete: Cascade)
+  reviewed_by         User?         @relation(name: "ReviewedQuestions", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+  approved_question   Question?     @relation("GeneratedFrom")
+
+  @@index([generation_job_id])
+  @@index([status])
+  @@index([quality_score])
+  @@index([created_at])
+  @@map("generated_questions")
+}
+
+model Conversation {
+  id         String                @id @default(cuid())
+  user_id    String
+  exam_id    String?
+  title      String?
+  created_at DateTime              @default(now())
+  updated_at DateTime              @updatedAt
+  user       User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  exam       Exam?                 @relation(fields: [exam_id], references: [id], onDelete: SetNull)
+  messages   ConversationMessage[]
+
+  @@index([user_id])
+  @@index([created_at])
+  @@map("conversations")
+}
+
+model ConversationMessage {
+  id              String       @id @default(cuid())
+  conversation_id String
+  role            String
+  content         String       @db.Text
+  sources         Json?
+  tokens_used     Int?
+  cost            Float?
+  created_at      DateTime     @default(now())
+  conversation    Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id])
+  @@index([created_at])
+  @@map("conversation_messages")
+}
+
+model IRTProfile {
+  id               String   @id @default(cuid())
+  user_id          String
+  exam_id          String
+  ability_estimate Float
+  standard_error   Float
+  attempts_count   Int      @default(0)
+  last_updated     DateTime @updatedAt
+  created_at       DateTime @default(now())
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  exam             Exam     @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, exam_id])
+  @@index([user_id])
+  @@index([exam_id])
+  @@map("irt_profiles")
+}
