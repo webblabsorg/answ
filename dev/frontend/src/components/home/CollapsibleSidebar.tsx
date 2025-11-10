@@ -123,13 +123,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           <GraduationCapIcon className="h-5 w-5" />
         </button>
         
-        <button 
-          onClick={() => isAuthenticated ? onNewChat() : onAuthPrompt()}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="New Chat"
-        >
-          <PlusIcon className="h-5 w-5" />
-        </button>
+        {/* Removed top-level New Chat from collapsed view to keep Chat under Projects */}
 
         <button 
           onClick={() => handleItemClick('/tutor')}
