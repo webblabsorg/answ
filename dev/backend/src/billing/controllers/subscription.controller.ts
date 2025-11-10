@@ -12,8 +12,10 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
 import { SubscriptionService } from '../services/subscription.service';
 import { StripeService } from '../services/stripe.service';
+import { CurrencyService } from '../services/currency.service';
 import { CreateCheckoutDto, ChangeTierDto, CreatePortalSessionDto } from '../dto';
 
 @Controller('subscriptions')
@@ -22,6 +24,7 @@ export class SubscriptionController {
   constructor(
     private subscriptionService: SubscriptionService,
     private stripeService: StripeService,
+    private currencyService: CurrencyService,
   ) {}
 
   /**
@@ -30,6 +33,50 @@ export class SubscriptionController {
    */
   @Post('checkout')
   async createCheckout(@CurrentUser() user: any, @Body() dto: CreateCheckoutDto) {
+    // Country-based provider routing (feature flag via env JSON map)
+    const country = (dto.country || '').toUpperCase();
+    const currency = (dto.currency || 'USD').toUpperCase();
+    let provider: 'stripe' | 'paypal' = 'stripe';
+
+    try {
+      const mapJson = process.env.PAYMENT_PROVIDER_COUNTRY_MAP || '';
+      if (mapJson) {
+        const mapping = JSON.parse(mapJson) as Record<string, 'stripe' | 'paypal'>;
+        if (country && mapping[country]) provider = mapping[country];
+      }
+    } catch {}
+
+    if (provider === 'paypal') {
+      // Use PayPal sandbox adapter and fallback to Stripe on error
+      try {
+        const { CurrencyService } = await import('../services/currency.service');
+        const { PayPalService } = await import('../services/paypal.service');
+        const currencySvc = new CurrencyService();
+        const pp = new PayPalService();
+
+        // Base prices in USD
+        const basePrices: Record<string, number> = { STARTER: 0, GROW: 29, SCALE: 99 };
+        const usd = basePrices[dto.tier] ?? 0;
+        const amount = await currencySvc.convertFromUSD(usd, currency);
+
+        if (amount <= 0) {
+          // Free tier; no checkout, just return to success
+          return { url: dto.successUrl };
+        }
+
+        const result = await pp.createCheckoutSession({
+          amount,
+          currency,
+          successUrl: dto.successUrl,
+          cancelUrl: dto.cancelUrl,
+          description: `${dto.tier} plan`,
+        });
+        return { sessionId: result.id, url: result.url, provider: 'paypal' };
+      } catch (e) {
+        // Fallback to Stripe
+      }
+    }
+
     const session = await this.subscriptionService.createCheckoutSession({
       userId: user.id,
       tier: dto.tier,
@@ -40,6 +87,7 @@ export class SubscriptionController {
     return {
       sessionId: session.id,
       url: session.url,
+      provider: 'stripe',
     };
   }
 
@@ -74,6 +122,16 @@ export class SubscriptionController {
   async getUserSubscriptions(@CurrentUser() user: any) {
     const subscriptions = await this.subscriptionService.getUserSubscriptions(user.id);
     return { subscriptions };
+  }
+
+  /**
+   * List invoices for current user
+   * GET /subscriptions/invoices
+   */
+  @Get('invoices')
+  async listInvoices(@CurrentUser() user: any) {
+    const invoices = await this.subscriptionService.listInvoicesForUser(user.id, 50);
+    return { invoices };
   }
 
   /**
@@ -149,6 +207,7 @@ export class SubscriptionController {
    * GET /subscriptions/pricing
    */
   @Get('pricing')
+  @Public()
   async getPricing(@Param() _unused?: any) {
     // Keep default USD response for backward compatibility
     return {
@@ -164,10 +223,8 @@ export class SubscriptionController {
    * Multicurrency: GET /subscriptions/pricing/:currency (e.g., EUR)
    */
   @Get('pricing/:currency')
-  async getPricingByCurrency(@Param('currency') currency: string, ): Promise<any> {
-    const { CurrencyService } = await import('../services/currency.service');
-    // dynamic import to avoid circulars
-    const ratesSvc = new CurrencyService();
+  @Public()
+  async getPricingByCurrency(@Param('currency') currency: string): Promise<any> {
     const code = (currency || 'USD').toUpperCase();
     const base = [
       { id: 'STARTER', name: 'Starter', price: 0 },
@@ -177,7 +234,7 @@ export class SubscriptionController {
     const converted = await Promise.all(
       base.map(async (t) => ({
         ...t,
-        price: Math.round((await ratesSvc.convertFromUSD(t.price, code)) * 100) / 100,
+        price: Math.round((await this.currencyService.convertFromUSD(t.price, code)) * 100) / 100,
         currency: code,
         interval: 'month',
       }))

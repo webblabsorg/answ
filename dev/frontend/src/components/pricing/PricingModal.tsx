@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
+import { useCurrencyStore } from '@/store/currency-store';
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -44,7 +45,20 @@ const currencies: Currency[] = [
 ];
 
 export function PricingModal({ isOpen, onClose }: PricingModalProps) {
-  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(currencies[0]); // local fallback
+  const currencyStore = useCurrencyStore();
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>({
+    code: currencyStore.code,
+    symbol: currencyStore.symbol,
+    rate: currencyStore.rate,
+  });
+  useEffect(() => {
+    // sync with global currency picker
+    setSelectedCurrency({
+      code: currencyStore.code,
+      symbol: currencyStore.symbol,
+      rate: currencyStore.rate,
+    });
+  }, [currencyStore.code, currencyStore.symbol, currencyStore.rate]);
   const [planType, setPlanType] = useState<PlanType>('personal');
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,10 +66,11 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
   const convertPrice = (usdPrice: number): string => {
     const converted = usdPrice * selectedCurrency.rate;
-    if (selectedCurrency.code === 'JPY' || selectedCurrency.code === 'INR') {
-      return Math.round(converted).toString();
+    try {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: selectedCurrency.code }).format(converted);
+    } catch {
+      return `${selectedCurrency.symbol}${converted.toFixed(2)}`;
     }
-    return converted.toFixed(2);
   };
 
   const handleUpgrade = async (tier: string) => {
@@ -319,6 +334,12 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                         key={currency.code}
                         onClick={() => {
                           setSelectedCurrency(currency);
+                          // propagate to global store for consistency
+                          currencyStore.setCurrency({
+                            code: currency.code as any,
+                            symbol: currency.symbol,
+                            rate: currency.rate,
+                          } as any);
                           setShowCurrencyPicker(false);
                         }}
                         className={cn(

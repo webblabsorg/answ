@@ -6,6 +6,7 @@ import { UsageTrackingService } from './services/usage-tracking.service';
 import { AnalyticsService } from './services/analytics.service';
 import { PredictionService } from './services/prediction.service';
 import { CurrencyService } from './services/currency.service';
+import { PayPalService } from './services/paypal.service';
 import { SubscriptionController } from './controllers/subscription.controller';
 import { WebhookController } from './controllers/webhook.controller';
 import { UsageController } from './controllers/usage.controller';
@@ -18,7 +19,7 @@ import { UsersModule } from '../users/users.module';
 @Module({
   imports: [ConfigModule, PrismaModule, UsersModule],
   controllers: [SubscriptionController, WebhookController, UsageController, AnalyticsController, PredictionsController],
-  providers: [StripeService, SubscriptionService, UsageTrackingService, AnalyticsService, PredictionService, CurrencyService, QuotaGuard],
-  exports: [StripeService, SubscriptionService, UsageTrackingService, AnalyticsService, PredictionService, CurrencyService, QuotaGuard],
+  providers: [StripeService, SubscriptionService, UsageTrackingService, AnalyticsService, PredictionService, CurrencyService, PayPalService, QuotaGuard],
+  exports: [StripeService, SubscriptionService, UsageTrackingService, AnalyticsService, PredictionService, CurrencyService, PayPalService, QuotaGuard],
 })
 export class BillingModule {}
