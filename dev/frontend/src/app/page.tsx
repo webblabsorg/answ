@@ -1,7 +1,22 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    // Redirect authenticated users to dashboard
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
   return (
     <main className="min-h-screen flex flex-col">
       {/* Header */}
