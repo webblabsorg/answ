@@ -53,6 +53,7 @@ export default function AdminLayout({
     { name: 'Questions', href: '/admin/questions', icon: FileQuestion },
     { name: 'Bulk Import', href: '/admin/bulk-import', icon: FileUp },
     { name: 'Essay Review', href: '/admin/essays', icon: FileText },
+    { name: 'AI Dashboard', href: '/admin/ai', icon: BarChart3 },
     { name: 'Audit Logs', href: '/admin/audit-logs', icon: BarChart3 },
   ];
 
