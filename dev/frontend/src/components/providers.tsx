@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { initWebVitals } from '@/lib/web-vitals';
+import { DevServiceWorkerReset } from '@/components/dev/DevServiceWorkerReset';
 
 // Create queryClient outside component to ensure single instance
 let queryClientInstance: QueryClient | null = null;
@@ -33,6 +34,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {process.env.NODE_ENV === 'development' && <DevServiceWorkerReset />}
       {children}
     </QueryClientProvider>
   );

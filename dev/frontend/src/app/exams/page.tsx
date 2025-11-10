@@ -63,7 +63,7 @@ export default function ExamsPage() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
-            <div className="text-2xl font-bold text-primary cursor-pointer">Answly</div>
+            <div className="text-2xl font-bold text-primary cursor-pointer">answly</div>
           </Link>
           <nav className="flex gap-4">
             <Link href="/dashboard">

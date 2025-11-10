@@ -50,7 +50,7 @@ export function ChatLayout({
           >
             <MenuIcon className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold">Answly</h1>
+          <h1 className="text-lg font-bold">answly</h1>
           <Button
             variant="ghost"
             size="sm"

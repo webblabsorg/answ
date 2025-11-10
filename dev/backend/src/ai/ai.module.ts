@@ -15,10 +15,13 @@ import { RAGService } from './services/rag.service';
 import { AITutorService } from './services/ai-tutor.service';
 import { ResponseCacheService } from './services/response-cache.service';
 import { TranslationService } from './services/translation.service';
+import { IRTService } from './services/irt.service';
+import { PersonalizationService } from './services/personalization.service';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { AIAdminController } from './controllers/ai-admin.controller';
 import { GenerationController } from './controllers/generation.controller';
 import { TutorController } from './controllers/tutor.controller';
+import { IRTController } from './controllers/irt.controller';
 import { QuestionGenerationProcessor } from './processors/question-generation.processor';
 
 @Module({
@@ -35,7 +38,7 @@ import { QuestionGenerationProcessor } from './processors/question-generation.pr
       name: 'question-generation',
     }),
   ],
-  controllers: [AIAdminController, GenerationController, TutorController],
+  controllers: [AIAdminController, GenerationController, TutorController, IRTController],
   providers: [
     // Providers
     OpenAIProvider,
@@ -54,6 +57,9 @@ import { QuestionGenerationProcessor } from './processors/question-generation.pr
     AITutorService,
     ResponseCacheService,
     TranslationService,
+    // Session 10 Services
+    IRTService,
+    PersonalizationService,
     // Guards
     RateLimitGuard,
     // Queue Processors
@@ -70,6 +76,8 @@ import { QuestionGenerationProcessor } from './processors/question-generation.pr
     AITutorService,
     ResponseCacheService,
     TranslationService,
+    IRTService,
+    PersonalizationService,
   ],
 })
 export class AIModule {}

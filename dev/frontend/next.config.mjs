@@ -12,7 +12,7 @@ const nextConfig = {
   },
 };
 
-export default withPWA({
+const withPWAConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
@@ -163,4 +163,6 @@ export default withPWA({
   fallbacks: {
     document: '/offline',
   },
-})(nextConfig);
+});
+
+export default process.env.NODE_ENV === 'production' ? withPWAConfig(nextConfig) : nextConfig;

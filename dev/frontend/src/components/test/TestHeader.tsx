@@ -33,7 +33,7 @@ export function TestHeader({
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Left: Exam Name */}
         <div className="flex items-center gap-4">
-          <div className="text-xl font-bold text-primary">Answly</div>
+          <div className="text-xl font-bold text-primary">answly</div>
           <div className="border-l pl-4">
             <div className="text-sm text-muted-foreground">Practice Test</div>
             <div className="font-semibold">{examName}</div>

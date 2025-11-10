@@ -56,4 +56,69 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Custom Scrollbar Styling */
+  /* For Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(107, 114, 128, 0.3);
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.5);
+  }
+
+  /* Dark theme scrollbar */
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.2);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.4);
+  }
+
+  /* For Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107, 114, 128, 0.3) transparent;
+  }
+
+  .dark * {
+    scrollbar-color: rgba(156, 163, 175, 0.2) transparent;
+  }
+
+  /* Hide scrollbar on inactive elements for cleaner look */
+  @media (pointer: fine) {
+    .sidebar-scroll:not(:hover)::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+  }
+
+  /* Remove any unwanted outlines and decorations */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+  }
+
+  /* Ensure no red lines or decorations */
+  * {
+    box-decoration-break: clone;
+  }
+
+  /* Remove any default link underlines that might appear as lines */
+  a {
+    text-decoration: none;
+  }
 }

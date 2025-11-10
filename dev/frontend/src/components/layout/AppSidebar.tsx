@@ -16,7 +16,15 @@ import {
   SettingsIcon,
   LogOutIcon,
   XIcon,
-  MenuIcon
+  MenuIcon,
+  BrainIcon,
+  BarChartIcon,
+  CalendarIcon,
+  FileTextIcon,
+  ShieldIcon,
+  CheckSquareIcon,
+  UsersIcon,
+  DatabaseIcon
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -83,6 +91,8 @@ export function AppSidebar({
     window.location.href = '/login';
   };
 
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'REVIEWER';
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -106,7 +116,7 @@ export function AppSidebar({
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <Link href="/dashboard">
-              <div className="text-2xl font-bold cursor-pointer">Answly</div>
+              <div className="text-2xl font-bold cursor-pointer">answly</div>
             </Link>
             <Button
               variant="ghost"
@@ -190,6 +200,39 @@ export function AppSidebar({
             </div>
           </div>
 
+          {/* Tools */}
+          <div className="p-4 border-b border-gray-700">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3">
+              Tools
+            </h3>
+            <div className="space-y-1">
+              <Link href="/tutor" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <BrainIcon className="h-4 w-4 mr-2" />
+                  AI Tutor
+                </Button>
+              </Link>
+              <Link href="/dashboard" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <FileTextIcon className="h-4 w-4 mr-2" />
+                  Practice Tests
+                </Button>
+              </Link>
+              <Link href="/insights" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <BarChartIcon className="h-4 w-4 mr-2" />
+                  Performance Insights
+                </Button>
+              </Link>
+              <Link href="/study-plan" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  Study Plan
+                </Button>
+              </Link>
+            </div>
+          </div>
+
           {/* Recent Conversations */}
           <div className="p-4">
             <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3">
@@ -232,6 +275,35 @@ export function AppSidebar({
               )}
             </div>
           </div>
+
+          {/* Admin */}
+          {isAdmin && (
+            <div className="p-4 border-t border-gray-700">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3">
+                Admin
+              </h3>
+              <div className="space-y-1">
+                <Link href="/admin/review-queue" className="block">
+                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                    <CheckSquareIcon className="h-4 w-4 mr-2" />
+                    Review Queue
+                  </Button>
+                </Link>
+                <Link href="/admin/users" className="block">
+                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                    <UsersIcon className="h-4 w-4 mr-2" />
+                    User Management
+                  </Button>
+                </Link>
+                <Link href="/admin/bulk-import" className="block">
+                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                    <DatabaseIcon className="h-4 w-4 mr-2" />
+                    Bulk Import
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* User Section */}
