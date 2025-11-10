@@ -13,12 +13,15 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { LanguagePicker } from '@/components/home/LanguagePicker';
+import { PricingModal } from '@/components/pricing/PricingModal';
+import { CurrencyPicker } from '@/components/home/CurrencyPicker';
 
 export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const [examType, setExamType] = useState('');
   const [message, setMessage] = useState('');
   const [isHovering, setIsHovering] = useState(false);
@@ -103,10 +106,16 @@ export default function HomePage() {
             <span className="text-lg font-semibold">answly</span>
           </div>
           
-          {/* Upgrade Button */}
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
-            Upgrade
-          </button>
+          {/* Upgrade + Currency */}
+          <div className="flex items-center gap-2">
+            <CurrencyPicker />
+            <button 
+              onClick={() => setShowPricingModal(true)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Upgrade
+            </button>
+          </div>
         </div>
 
         {/* Main Content Area */}
@@ -196,6 +205,13 @@ export default function HomePage() {
       <RightAuthPanel
         isOpen={showAuthPanel}
         onClose={() => setShowAuthPanel(false)}
+      />
+
+      {/* Pricing Modal */}
+      <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+      <PricingModal
+        isOpen={showPricingModal}
+        onClose={() => setShowPricingModal(false)}
       />
     </div>
   );
