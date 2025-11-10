@@ -17,6 +17,9 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
   const [recognition, setRecognition] = useState<any>(null);
 
   useEffect(() => {
+    // Check if we're in the browser
+    if (typeof window === 'undefined') return;
+    
     // Check if browser supports Speech Recognition
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -64,8 +67,12 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
     }
 
     return () => {
-      if (recognition) {
-        recognition.stop();
+      if (recognition && typeof window !== 'undefined') {
+        try {
+          recognition.stop();
+        } catch (error) {
+          // Ignore errors on cleanup
+        }
       }
     };
   }, []);
