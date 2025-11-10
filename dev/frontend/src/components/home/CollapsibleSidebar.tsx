@@ -23,6 +23,14 @@ import {
   CheckSquareIcon,
   UsersIcon,
   DatabaseIcon,
+  BookOpenIcon,
+  FolderKanbanIcon,
+  MoreHorizontal,
+  Share2,
+  Pencil,
+  Archive,
+  Trash,
+  ClipboardListIcon,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -40,8 +48,11 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
   const [exploreOpen, setExploreOpen] = useState(false);
   const [examsOpen, setExamsOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(true);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [projectsOpen, setProjectsOpen] = useState(true);
   const [adminOpen, setAdminOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [menuOpenIndex, setMenuOpenIndex] = useState<number | null>(null);
   
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'REVIEWER';
 
@@ -49,7 +60,16 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
     { title: 'How to prepare for GRE...', time: '2 min ago' },
     { title: 'SAT Math practice...', time: '15 min ago' },
     { title: 'Essay writing tips...', time: '1 hour ago' },
+    { title: 'ACT study plan ideas', time: '2 hours ago' },
   ] : [];
+
+  const libraryApps = [
+    { name: 'Flashcards', icon: BookOpenIcon },
+    { name: 'Vocabulary Builder', icon: BrainIcon },
+    { name: 'Formula Sheets', icon: FileTextIcon },
+    { name: 'Note Taker', icon: Pencil },
+  ];
+
 
   const exams = [
     { name: 'GRE', icon: '🎓' },
@@ -185,7 +205,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
   // Expanded sidebar
   return (
     <div 
-      className="w-60 h-full bg-black text-white flex flex-col border-r border-gray-800 shadow-2xl transition-all duration-300"
+      className="w-60 h-full bg-black text-white flex flex-col border-r border-gray-800 shadow-2xl transition-all duration-300 text-sm"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -206,19 +226,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4 sidebar-scroll">
-        {/* Chat Section */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-gray-400 uppercase">Chat</span>
-          </div>
-          <Button
-            onClick={() => isAuthenticated ? onNewChat() : onAuthPrompt()}
-            className="w-full justify-start bg-gray-900 hover:bg-gray-800 text-white border-0"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            New Chat
-          </Button>
-        </div>
+        {/* Explore Section */}
 
         {/* Recent Chats */}
         {isAuthenticated && recentChats.length > 0 && (
@@ -323,6 +331,119 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
                   </div>
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Library Section */}
+        <div>
+          <button
+            onClick={() => setLibraryOpen(!libraryOpen)}
+            className="w-full flex items-center justify-between py-2 hover:text-gray-300 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <BookOpenIcon className="h-4 w-4" />
+              <span className="text-xs font-semibold text-gray-400 uppercase">Library</span>
+            </div>
+            {libraryOpen ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
+          </button>
+          {libraryOpen && (
+            <div className="ml-6 mt-2 space-y-1">
+              {libraryApps.map(app => (
+                <button key={app.name} onClick={() => handleItemClick()} className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2">
+                  <app.icon className="h-4 w-4" />
+                  <span>{app.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Projects Section */}
+        <div>
+          <button
+            onClick={() => setProjectsOpen(!projectsOpen)}
+            className="w-full flex items-center justify-between py-2 hover:text-gray-300 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <FolderKanbanIcon className="h-4 w-4" />
+              <span className="text-xs font-semibold text-gray-400 uppercase">Projects</span>
+            </div>
+            {projectsOpen ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
+          </button>
+          {projectsOpen && (
+            <div className="ml-6 mt-2 space-y-1">
+              {/* Project items */}
+              <div className="space-y-1">
+                <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
+                  <FileTextIcon className="h-4 w-4" /> Essays
+                </button>
+                <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
+                  <Pencil className="h-4 w-4" /> Homeworks
+                </button>
+                <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
+                  <GraduationCapIcon className="h-4 w-4" /> Thesis
+                </button>
+                <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
+                  <FolderKanbanIcon className="h-4 w-4" /> Project Works
+                </button>
+              </div>
+
+              {/* Chat cluster moved here */}
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Chat</span>
+                  <Button
+                    onClick={() => (isAuthenticated ? onNewChat() : onAuthPrompt())}
+                    className="h-8 px-2 py-1 text-xs bg-gray-900 hover:bg-gray-800 text-white border-0"
+                  >
+                    <PlusIcon className="h-3 w-3 mr-1" /> New
+                  </Button>
+                </div>
+                <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+                  {isAuthenticated && recentChats.length > 0 ? (
+                    recentChats.slice(0, 4).map((chat, i) => (
+                      <div key={i} className="relative group">
+                        <button
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors flex items-start gap-2"
+                        >
+                          <MessageSquareIcon className="h-4 w-4 mt-0.5 flex-shrink-0 text-gray-400" />
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate text-gray-300">{chat.title}</p>
+                            <p className="text-xs text-gray-500">{chat.time}</p>
+                          </div>
+                          <button
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-800"
+                            onClick={(e) => { e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); }}
+                            aria-label="Chat options"
+                          >
+                            <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                          </button>
+                        </button>
+                        {/* Popup menu */}
+                        {menuOpenIndex === i && (
+                          <div className="absolute right-2 top-8 z-50 bg-black border border-gray-800 rounded-lg shadow-lg w-40 p-1">
+                            <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                              <Share2 className="h-4 w-4" /> Share
+                            </button>
+                            <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                              <Pencil className="h-4 w-4" /> Rename
+                            </button>
+                            <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                              <Archive className="h-4 w-4" /> Archive
+                            </button>
+                            <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left text-red-500" onClick={() => setMenuOpenIndex(null)}>
+                              <Trash className="h-4 w-4" /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-500 px-3 py-2">No recent conversations</p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
