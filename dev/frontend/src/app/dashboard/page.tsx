@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
@@ -11,12 +11,12 @@ import { ChatInterface } from '@/components/chat';
 // Force dynamic rendering (disable static generation)
 export const dynamic = 'force-dynamic';
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useAuthStore();
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [selectedExamId, setSelectedExamId] = useState<string | null>(
+  const [selectedExamId] = useState<string | null>(
     searchParams.get('examId')
   );
 
@@ -78,5 +78,20 @@ export default function DashboardPage() {
         onConversationCreated={handleConversationCreated}
       />
     </ChatLayout>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
