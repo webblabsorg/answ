@@ -56,12 +56,17 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
   
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'REVIEWER';
 
-  const recentChats = isAuthenticated ? [
+  // Provide sample recent chats even for guests so the section is visible and scrollable
+  const recentChats = [
     { title: 'How to prepare for GRE...', time: '2 min ago' },
     { title: 'SAT Math practice...', time: '15 min ago' },
     { title: 'Essay writing tips...', time: '1 hour ago' },
     { title: 'ACT study plan ideas', time: '2 hours ago' },
-  ] : [];
+    { title: 'GMAT data sufficiency tips', time: 'Yesterday' },
+    { title: 'TOEFL speaking practice', time: '2 days ago' },
+    { title: 'IELTS writing band 7 guide', time: 'Last week' },
+    { title: 'Algebra factoring refresher', time: 'Last month' },
+  ];
 
   const libraryApps = [
     { name: 'Flashcards', icon: BookOpenIcon },
@@ -111,7 +116,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
     // Collapsed sidebar - icons only
     return (
       <div 
-        className="w-20 h-full bg-black text-white flex flex-col items-center py-6 space-y-4 border-r border-gray-800 shadow-lg transition-all duration-300"
+        className="w-20 h-full bg-black text-white flex flex-col items-center py-6 space-y-3 border-r border-gray-800 shadow-lg transition-all duration-300 text-[11px]"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -120,7 +125,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           title="answly"
         >
-          <GraduationCapIcon className="h-5 w-5" />
+          <GraduationCapIcon className="h-4 w-4" />
         </button>
         
         {/* Removed top-level New Chat from collapsed view to keep Chat under Projects */}
@@ -130,7 +135,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           title="AI Tutor"
         >
-          <BrainIcon className="h-5 w-5" />
+          <BrainIcon className="h-4 w-4" />
         </button>
 
         <button 
@@ -138,7 +143,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           title="Practice Tests"
         >
-          <FileTextIcon className="h-5 w-5" />
+          <FileTextIcon className="h-4 w-4" />
         </button>
 
         <button 
@@ -146,7 +151,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           title="Performance Insights"
         >
-          <BarChartIcon className="h-5 w-5" />
+          <BarChartIcon className="h-4 w-4" />
         </button>
 
         <button 
@@ -154,7 +159,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           title="Study Plan"
         >
-          <CalendarIcon className="h-5 w-5" />
+          <CalendarIcon className="h-4 w-4" />
         </button>
 
         <button 
@@ -162,7 +167,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           title="Exams"
         >
-          <LayoutGridIcon className="h-5 w-5" />
+          <LayoutGridIcon className="h-4 w-4" />
         </button>
 
         <div className="flex-1" />
@@ -173,7 +178,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
             title="Admin Panel"
           >
-            <ShieldIcon className="h-5 w-5 text-blue-500" />
+            <ShieldIcon className="h-4 w-4 text-blue-500" />
           </button>
         )}
 
@@ -182,7 +187,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           title="Upgrade"
         >
-          <GraduationCapIcon className="h-5 w-5" />
+          <GraduationCapIcon className="h-4 w-4" />
         </button>
 
         <button 
@@ -190,7 +195,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           title="Profile"
         >
-          <UserIcon className="h-5 w-5" />
+          <UserIcon className="h-4 w-4" />
         </button>
       </div>
     );
@@ -199,16 +204,16 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
   // Expanded sidebar
   return (
     <div 
-      className="w-60 h-full bg-black text-white flex flex-col border-r border-gray-800 shadow-2xl transition-all duration-300 text-sm"
+      className="w-60 h-full bg-black text-white flex flex-col border-r border-gray-800 shadow-2xl transition-all duration-300 text-xs"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Header */}
       <div className="p-4 flex items-center gap-3 border-b border-gray-800">
         <button onClick={onToggle} title="answly">
-          <GraduationCapIcon className="h-6 w-6 text-blue-500" />
+          <GraduationCapIcon className="h-5 w-5 text-blue-500" />
         </button>
-        <span className="text-lg font-bold flex-1">answly</span>
+        <span className="text-base font-bold flex-1">answly</span>
         <button
           onClick={() => setIsPinned(!isPinned)}
           className={`p-2 hover:bg-gray-800 rounded-lg transition-colors ${isPinned ? 'text-blue-500' : 'text-gray-500'}`}
@@ -238,17 +243,17 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
                   <button
                     className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors flex items-start gap-2"
                   >
-                    <MessageSquareIcon className="h-4 w-4 mt-0.5 flex-shrink-0 text-gray-400" />
+                    <MessageSquareIcon className="h-3 w-3 mt-0.5 flex-shrink-0 text-gray-400" />
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-gray-300">{chat.title}</p>
-                      <p className="text-xs text-gray-500">{chat.time}</p>
+                      <p className="truncate text-gray-300 text-xs">{chat.title}</p>
+                      <p className="text-[10px] text-gray-500">{chat.time}</p>
                     </div>
                     <button
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-800"
                       onClick={(e) => { e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); }}
                       aria-label="Chat options"
                     >
-                      <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                      <MoreHorizontal className="h-3 w-3 text-gray-400" />
                     </button>
                   </button>
                   {menuOpenIndex === i && (
@@ -345,13 +350,13 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
                 <button
                   key={tool.name}
                   onClick={() => handleItemClick(tool.path)}
-                  className="w-full flex items-start gap-3 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
                   title={tool.description}
                 >
-                  <tool.icon className="h-4 w-4 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                  <tool.icon className="h-3 w-3 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
                   <div className="flex-1">
-                    <div className="text-sm text-gray-300 group-hover:text-white transition-colors">{tool.name}</div>
-                    <div className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">{tool.description}</div>
+                    <div className="text-xs text-gray-300 group-hover:text-white transition-colors">{tool.name}</div>
+                    <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">{tool.description}</div>
                   </div>
                 </button>
               ))}
@@ -374,8 +379,8 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           {libraryOpen && (
             <div className="ml-6 mt-2 space-y-1">
               {libraryApps.map(app => (
-                <button key={app.name} onClick={() => handleItemClick()} className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2">
-                  <app.icon className="h-4 w-4" />
+                <button key={app.name} onClick={() => handleItemClick()} className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2">
+                  <app.icon className="h-3 w-3" />
                   <span>{app.name}</span>
                 </button>
               ))}
@@ -399,14 +404,14 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             <div className="ml-6 mt-2 space-y-1">
               {/* Project items */}
               <div className="space-y-1">
-                <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
-                  <Pencil className="h-4 w-4" /> Homeworks
+                <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
+                  <Pencil className="h-3 w-3" /> Homeworks
                 </button>
-                <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
-                  <FileTextIcon className="h-4 w-4" /> Essays
+                <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
+                  <FileTextIcon className="h-3 w-3" /> Essays
                 </button>
-                <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
-                  <BrainIcon className="h-4 w-4" /> Deep Research
+                <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
+                  <BrainIcon className="h-3 w-3" /> Deep Research
                 </button>
               </div>
 
@@ -443,18 +448,18 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
                         </button>
                         {/* Popup menu */}
                         {menuOpenIndex === i && (
-                          <div className="absolute right-2 top-8 z-50 bg-black border border-gray-800 rounded-lg shadow-lg w-40 p-1">
+                          <div className="absolute right-2 top-8 z-50 bg-black border border-gray-800 rounded-lg shadow-lg w-40 p-1 text-xs">
                             <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
-                              <Share2 className="h-4 w-4" /> Share
+                              <Share2 className="h-3 w-3" /> Share
                             </button>
                             <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
-                              <Pencil className="h-4 w-4" /> Rename
+                              <Pencil className="h-3 w-3" /> Rename
                             </button>
                             <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
-                              <Archive className="h-4 w-4" /> Archive
+                              <Archive className="h-3 w-3" /> Archive
                             </button>
                             <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left text-red-500" onClick={() => setMenuOpenIndex(null)}>
-                              <Trash className="h-4 w-4" /> Delete
+                              <Trash className="h-3 w-3" /> Delete
                             </button>
                           </div>
                         )}
