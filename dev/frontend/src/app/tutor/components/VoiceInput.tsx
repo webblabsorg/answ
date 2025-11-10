@@ -17,8 +17,9 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
   const [recognition, setRecognition] = useState<any>(null);
 
   useEffect(() => {
-    // Check if we're in the browser
+    // Only run in browser
     if (typeof window === 'undefined') return;
+    if (!onTranscript) return;
     
     // Check if browser supports Speech Recognition
     const SpeechRecognition =

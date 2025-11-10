@@ -4,29 +4,32 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { initWebVitals } from '@/lib/web-vitals';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-      retry: 1,
-    },
-  },
-});
+// Create queryClient outside component to ensure single instance
+let queryClientInstance: QueryClient | null = null;
+
+function getQueryClient() {
+  if (!queryClientInstance) {
+    queryClientInstance = new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 60 * 1000, // 1 minute
+          retry: 1,
+        },
+      },
+    });
+  }
+  return queryClientInstance;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
+  const [queryClient] = useState(() => getQueryClient());
 
   useEffect(() => {
-    setMounted(true);
     // Initialize web vitals tracking
     if (typeof window !== 'undefined') {
       initWebVitals();
     }
   }, []);
-
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
