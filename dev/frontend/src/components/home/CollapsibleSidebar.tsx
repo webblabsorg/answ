@@ -220,30 +220,60 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4 sidebar-scroll">
-        {/* Explore Section */}
-
-        {/* Recent Chats */}
-        {isAuthenticated && recentChats.length > 0 && (
-          <div>
-            <span className="text-xs font-semibold text-gray-400 uppercase mb-3 block">Recent</span>
-            <div className="space-y-1">
-              {recentChats.map((chat, i) => (
-                <button
-                  key={i}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors group"
-                >
-                  <div className="flex items-start gap-2">
+        {/* Chat Section (top-level) */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase">Chat</span>
+            <Button
+              onClick={() => (isAuthenticated ? onNewChat() : onAuthPrompt())}
+              className="h-8 px-2 py-1 text-xs bg-gray-900 hover:bg-gray-800 text-white border-0"
+            >
+              <PlusIcon className="h-3 w-3 mr-1" /> New
+            </Button>
+          </div>
+          <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+            {isAuthenticated && recentChats.length > 0 ? (
+              recentChats.slice(0, 4).map((chat, i) => (
+                <div key={i} className="relative group">
+                  <button
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors flex items-start gap-2"
+                  >
                     <MessageSquareIcon className="h-4 w-4 mt-0.5 flex-shrink-0 text-gray-400" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate text-gray-300">{chat.title}</p>
+                      <p className="truncate text-gray-300">{chat.title}</p>
                       <p className="text-xs text-gray-500">{chat.time}</p>
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                    <button
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-800"
+                      onClick={(e) => { e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); }}
+                      aria-label="Chat options"
+                    >
+                      <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                    </button>
+                  </button>
+                  {menuOpenIndex === i && (
+                    <div className="absolute right-2 top-8 z-50 bg-black border border-gray-800 rounded-lg shadow-lg w-40 p-1">
+                      <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                        <Share2 className="h-4 w-4" /> Share
+                      </button>
+                      <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                        <Pencil className="h-4 w-4" /> Rename
+                      </button>
+                      <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                        <Archive className="h-4 w-4" /> Archive
+                      </button>
+                      <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left text-red-500" onClick={() => setMenuOpenIndex(null)}>
+                        <Trash className="h-4 w-4" /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-gray-500 px-3 py-2">No recent conversations</p>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Explore Section */}
         <div>
@@ -370,21 +400,18 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
               {/* Project items */}
               <div className="space-y-1">
                 <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
-                  <FileTextIcon className="h-4 w-4" /> Essays
-                </button>
-                <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
                   <Pencil className="h-4 w-4" /> Homeworks
                 </button>
                 <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
-                  <GraduationCapIcon className="h-4 w-4" /> Thesis
+                  <FileTextIcon className="h-4 w-4" /> Essays
                 </button>
                 <button className="block text-left w-full text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
-                  <FolderKanbanIcon className="h-4 w-4" /> Project Works
+                  <BrainIcon className="h-4 w-4" /> Deep Research
                 </button>
               </div>
 
-              {/* Chat cluster moved here */}
-              <div className="mt-3">
+              {/* Chat cluster moved here (removed, now top-level) */}
+              <div className="hidden">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase">Chat</span>
                   <Button
