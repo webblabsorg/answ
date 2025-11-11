@@ -48,7 +48,7 @@ services:
       FEATURE_AI: "true"
       FEATURE_REALTIME: "true"
       FEATURE_CALENDAR: "true"
-      FEATURE_LMS: "false"
+      FEATURE_LMS: "true"
       ICS_SIGNING_SECRET: dev_ics_secret_change_in_production
       FEATURE_BILLING: "false"
       FEATURE_ENTERPRISE: "false"
