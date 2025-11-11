@@ -23,6 +23,7 @@ import { GenerationController } from './controllers/generation.controller';
 import { TutorController } from './controllers/tutor.controller';
 import { IRTController } from './controllers/irt.controller';
 import { QuestionGenerationProcessor } from './processors/question-generation.processor';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { QuestionGenerationProcessor } from './processors/question-generation.pr
     RateLimitGuard,
     // Queue Processors
     QuestionGenerationProcessor,
+    RolesGuard,
   ],
   exports: [
     AIOrchestrator,
