@@ -15,6 +15,7 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { HomeworkModule } from './homework/homework.module';
 import { HealthModule } from './health/health.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { RealtimeModule } from './realtime/realtime.module';
 // Optional modules will be conditionally required below to avoid build-time resolution
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -57,6 +58,30 @@ try {
   }
 } catch (e) {
   console.log('AI module not available (optional feature)');
+}
+
+try {
+  if (process.env.FEATURE_REALTIME === 'true') {
+    baseImports.push(RealtimeModule);
+  }
+} catch (e) {
+  console.log('Realtime module not available (optional feature)');
+}
+
+try {
+  if (process.env.FEATURE_CALENDAR === 'true') {
+    baseImports.push(dynamicRequire('./calendar/calendar.module').CalendarModule);
+  }
+} catch (e) {
+  console.log('Calendar module not available (optional feature)');
+}
+
+try {
+  if (process.env.FEATURE_LMS === 'true') {
+    baseImports.push(dynamicRequire('./lms/lms.module').LMSModule);
+  }
+} catch (e) {
+  console.log('LMS module not available (optional feature)');
 }
 
 try {

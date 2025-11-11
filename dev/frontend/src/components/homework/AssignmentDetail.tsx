@@ -2,8 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
+import { getCollabSocket, disconnectCollab } from "@/lib/socket";
+import { useAuthStore } from "@/store/auth-store";
 
 interface AssignmentSummary { id: string; subject: string; title: string; due: string; status: string }
 interface AssignmentDetailData extends AssignmentSummary {
@@ -17,6 +19,10 @@ interface AssignmentDetailData extends AssignmentSummary {
 interface AssignmentDetailProps { assignment: AssignmentSummary; onBack: () => void }
 
 export function AssignmentDetail({ assignment, onBack }: AssignmentDetailProps) {
+  const { token } = useAuthStore();
+  const [connected, setConnected] = useState(false);
+  const [content, setContent] = useState("");
+  const serverRevRef = useRef(0);
   const { data, isLoading, isError } = useQuery<AssignmentDetailData>({
     queryKey: ["homework-detail", assignment.id],
     queryFn: async () => {
@@ -45,6 +51,23 @@ export function AssignmentDetail({ assignment, onBack }: AssignmentDetailProps) 
     },
     staleTime: 30_000,
   });
+
+  // Realtime collaboration (basic): join homework room, sync content
+  useEffect(() => {
+    if (!token) return;
+    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const s = getCollabSocket(base, token);
+    function onConnected() { setConnected(true); s.emit('join_room', { homeworkId: assignment.id }); s.emit('content_snapshot', { homeworkId: assignment.id }); }
+    function onAck(payload: any) { serverRevRef.current = payload.serverRev; }
+    function onSnapshot(payload: any) { setContent(payload.content || ''); serverRevRef.current = payload.serverRev || 0; }
+    function onUpdate(payload: any) { setContent(payload.content || ''); serverRevRef.current = payload.serverRev || serverRevRef.current; }
+    s.on('connected', onConnected);
+    s.on('joined', () => {});
+    s.on('ack', onAck);
+    s.on('snapshot', onSnapshot);
+    s.on('content_update', onUpdate);
+    return () => { try { s.emit('leave_room', { homeworkId: assignment.id }); } catch {}; disconnectCollab(); setConnected(false); };
+  }, [assignment.id, token]);
 
   const detail = useMemo<AssignmentDetailData | null>(() => data ?? null, [data]);
 
@@ -108,11 +131,13 @@ export function AssignmentDetail({ assignment, onBack }: AssignmentDetailProps) 
           <Button className="h-8 px-2 bg-gray-900 hover:bg-gray-800 border-0" aria-label="Italic">I</Button>
           <Button className="h-8 px-2 bg-gray-900 hover:bg-gray-800 border-0" aria-label="Underline">U</Button>
           <Button className="h-8 px-2 bg-gray-900 hover:bg-gray-800 border-0" aria-label="AI Help">AI Help ✨</Button>
+          <span className="ml-auto text-xs text-gray-500">{connected ? 'Live: connected' : 'Live: offline'}</span>
         </div>
         <textarea
           className="w-full min-h-[220px] bg-black/40 border border-gray-800 rounded-lg p-3 text-sm text-gray-200 focus:outline-none focus:border-blue-500"
           placeholder="Start writing your draft here..."
-          defaultValue={"The theme of racial injustice in Harper Lee's To Kill a Mockingbird..."}
+          value={content}
+          onChange={(e) => { setContent(e.target.value); try { const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'; const s = getCollabSocket(base, token || ''); s.emit('content_patch', { homeworkId: assignment.id, content: e.target.value, clientRev: serverRevRef.current }); } catch {} }}
         />
         <div className="flex gap-2 mt-3">
           <Button className="h-9 px-3 bg-white text-black hover:bg-gray-100">Save Draft</Button>

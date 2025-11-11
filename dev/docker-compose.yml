@@ -46,6 +46,10 @@ services:
       PORT: 4000
       CORS_ORIGIN: http://localhost:3000
       FEATURE_AI: "true"
+      FEATURE_REALTIME: "true"
+      FEATURE_CALENDAR: "true"
+      FEATURE_LMS: "false"
+      ICS_SIGNING_SECRET: dev_ics_secret_change_in_production
       FEATURE_BILLING: "false"
       FEATURE_ENTERPRISE: "false"
       FEATURE_COMPLIANCE: "false"
@@ -68,6 +72,7 @@ services:
     container_name: answly-frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_REALTIME_ENABLED: "true"
     ports:
       - '3000:3000'
     volumes:
