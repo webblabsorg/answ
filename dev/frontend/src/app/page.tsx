@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/store/auth-store';
 import { CollapsibleSidebar } from '@/components/home/CollapsibleSidebar';
 import { RightAuthPanel } from '@/components/home/RightAuthPanel';
+import { LanguagePicker } from '@/components/home/LanguagePicker';
 import {
   GraduationCapIcon,
   ArrowRightIcon,
@@ -195,14 +196,17 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Footer (reduced) */}
-        <div className="px-6 py-4 flex items-center justify-end">
-          <div className="flex items-center gap-3">
-            <button 
-              className="text-gray-500 hover:text-white transition-colors p-1"
+        {/* Floating action bar (bottom-right) */}
+        <div className="fixed bottom-4 right-4 z-[100] pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-xl bg-gray-900/80 border border-gray-800 backdrop-blur px-2 py-2 shadow-lg">
+            {/* Language Picker (globe icon, opens vertical language modal) */}
+            <LanguagePicker />
+            <button
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-gray-300 hover:text-white transition-colors"
               title="Help"
+              aria-label="Help"
             >
-              <HelpCircle className="h-4 w-4" />
+              <HelpCircle className="h-5 w-5" />
             </button>
           </div>
         </div>

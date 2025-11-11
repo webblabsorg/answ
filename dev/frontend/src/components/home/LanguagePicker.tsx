@@ -172,15 +172,18 @@ export function LanguagePicker() {
       {/* Globe Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="text-gray-500 hover:text-white transition-colors p-1"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-gray-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         title={`Language: ${selectedLanguage.nativeName}`}
+        aria-label="Language"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
       >
-        <Globe className="h-4 w-4" />
+        <Globe className="h-5 w-5" />
       </button>
 
       {/* Language Picker Dropdown */}
       {isOpen && (
-        <div className="absolute bottom-full right-0 mb-2 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-2xl overflow-hidden">
+        <div className="absolute bottom-full right-0 mb-2 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-2xl overflow-hidden z-[110]">
           {/* Search Input */}
           <div className="p-3 border-b border-gray-800">
             <input
