@@ -35,29 +35,36 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration - allow localhost (any port) for dev
+  // CORS configuration – reflect allowed origin (supports comma‑separated CORS_ORIGIN)
+  const envOrigins = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const defaultLocal = ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'];
+  const allowList = new Set([...defaultLocal, ...envOrigins]);
+
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow mobile apps/curl
-      if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-        return callback(null, true);
-      }
+      if (!origin) return callback(null, true); // non-browser clients
+      if (allowList.has(origin)) return callback(null, true);
+      // Allow any localhost port in development as a fallback
+      if (/^http:\/\/(localhost|127\.0\.0\.1):(\d+)$/.test(origin)) return callback(null, true);
       return callback(new Error(`CORS blocked for origin: ${origin}`), false);
     },
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
+    optionsSuccessStatus: 204,
   });
 
-  // Explicit CORS header reflection for localhost to override any stale settings
+  // Ensure Vary: Origin and proper preflight reflection
   app.use((req: Request, res: Response, next) => {
     const origin = req.headers.origin as string | undefined;
-    if (origin && /^http:\/\/(localhost|127\.0\.0\.1)(:\\d+)?$/.test(origin)) {
-      res.header('Access-Control-Allow-Origin', origin);
+    if (origin) {
       res.header('Vary', 'Origin');
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
       if (req.method === 'OPTIONS') {
-        return res.sendStatus(204);
+        res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
       }
     }
     next();

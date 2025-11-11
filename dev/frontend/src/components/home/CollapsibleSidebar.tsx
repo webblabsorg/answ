@@ -255,13 +255,16 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
                         <p className="truncate text-gray-300 text-xs">{chat.title}</p>
                         <p className="text-[10px] text-gray-500">{chat.time}</p>
                       </div>
-                      <button
+                      <span
+                        role="button"
+                        tabIndex={0}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-800"
                         onClick={(e) => { e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); } }}
                         aria-label="Chat options"
                       >
                         <MoreHorizontal className="h-3 w-3 text-gray-400" />
-                      </button>
+                      </span>
                     </button>
                     {menuOpenIndex === i && (
                       <div className="absolute right-2 top-8 z-50 bg-black border border-gray-800 rounded-lg shadow-lg w-40 p-1 text-xs">
@@ -499,13 +502,16 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
                             <p className="truncate text-gray-300">{chat.title}</p>
                             <p className="text-xs text-gray-500">{chat.time}</p>
                           </div>
-                          <button
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-800"
-                            onClick={(e) => { e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); }}
-                            aria-label="Chat options"
-                          >
-                            <MoreHorizontal className="h-4 w-4 text-gray-400" />
-                          </button>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-800"
+                          onClick={(e) => { e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); } }}
+                          aria-label="Chat options"
+                        >
+                          <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                        </span>
                         </button>
                         {/* Popup menu */}
                         {menuOpenIndex === i && (
