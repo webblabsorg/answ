@@ -1,0 +1,46 @@
+📋 Remaining High-Priority Tasks
+
+From the to-dos.md file, the next recommended tasks are:
+
+Next Steps (High Impact, Moderate Effort):
+1. Core Dashboard Enhancements - Add quick resume, streaks, goals, daily tasks to homepage
+2. Citation Generator Tool - Create APA/MLA/Chicago citation generator with BibTeX export
+3. Flashcards MVP - Build SRS flashcards with import/export
+
+Medium Priority (Larger Features):
+4. next-intl Integration - Full i18n setup (requires npm package installation)
+5. Adaptive Practice Sessions - Mastery model + diagnostics (backend integration required)
+6. Explanations Revamp - Multi-step solutions with citations
+
+All improvements maintain:
+•  Current black/gray/blue color scheme
+•  Existing layout structure
+•  Dark mode styling
+•  Design consistency
+
+
+# Config
+$api = "http://localhost:4000"
+ # Users to create (change as you like)
+PS C:\Users\Plange\Downloads\Projects\answly> $users = @(
+@{ name = "Admin User"; email = "admin@answly.local"; password = "Secret123!" },
+   @{ name = "Alice Test"; email = "alice@answly.local"; password = "Secret123!" },
+   @{ name = "Bob Test";   email = "bob@answly.local";   password = "Secret123!" },
+   @{ name = "Cara Test";  email = "cara@answly.local";  password = "Secret123!" }
+ )
+PS C:\Users\Plange\Downloads\Projects\answly>
+PS C:\Users\Plange\Downloads\Projects\answly> Write-Host "Registering users..."
+Registering users...
+PS C:\Users\Plange\Downloads\Projects\answly> foreach ($u in $users) {
+   try {
+     $body = $u | ConvertTo-Json
+     $res = Invoke-RestMethod -Uri "$api/auth/register" -Method Post -ContentType "application/json" -Body $body
+     Write-Host "✅ Registered $($u.email)"
+   } catch {
+     if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 409) {
+       Write-Host "ℹ️  $($u.email) already exists, skipping"
+     } else {
+       Write-Host "❌ Failed for $($u.email): $($_.Exception.Message)"
+     }
+   }
+ }

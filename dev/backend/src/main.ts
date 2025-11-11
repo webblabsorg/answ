@@ -34,9 +34,15 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
+  // CORS configuration - allow localhost (any port) for dev
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow mobile apps/curl
+      if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`), false);
+    },
     credentials: true,
   });
 

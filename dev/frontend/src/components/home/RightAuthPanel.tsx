@@ -185,7 +185,7 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
                 <Button
                   onClick={handleGoogleLogin}
                   variant="outline"
-                  className="w-full h-12 bg-white text-black hover:bg-gray-100 border-0"
+                  className="w-full h-12 bg-white text-black hover:bg-gray-100 hover:text-black border-0"
                   aria-label="Continue with Google"
                 >
                   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
@@ -200,7 +200,7 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
                 <Button
                   onClick={handleAppleLogin}
                   variant="outline"
-                  className="w-full h-12 bg-white text-black hover:bg-gray-100 border-0"
+                  className="w-full h-12 bg-white text-black hover:bg-gray-100 hover:text-black border-0"
                   aria-label="Continue with Apple"
                 >
                   <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -209,32 +209,6 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
                   Continue with Apple
                 </Button>
 
-                <Button
-                  onClick={handleMicrosoftLogin}
-                  variant="outline"
-                  className="w-full h-12 bg-white text-black hover:bg-gray-100 border-0"
-                  aria-label="Continue with Microsoft"
-                >
-                  <svg className="h-5 w-5 mr-2" viewBox="0 0 23 23" aria-hidden="true">
-                    <path fill="#f35325" d="M1 1h10v10H1z"/>
-                    <path fill="#81bc06" d="M12 1h10v10H12z"/>
-                    <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-                    <path fill="#ffba08" d="M12 12h10v10H12z"/>
-                  </svg>
-                  Continue with Microsoft
-                </Button>
-
-                <Button
-                  onClick={() => setMode('phone')}
-                  variant="outline"
-                  className="w-full h-12 bg-white text-black hover:bg-gray-100 border-0"
-                  aria-label="Continue with phone"
-                >
-                  <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill="currentColor" d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2m0 18H7V5h10Z"/>
-                  </svg>
-                  Continue with phone
-                </Button>
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
@@ -373,56 +347,6 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
               </form>
             )}
 
-            {mode === 'phone' && (
-              <div className="space-y-4">
-                {!otpSent ? (
-                  <form onSubmit={handlePhoneStart} className="space-y-4">
-                    <div>
-                      <Label htmlFor="phone-input" className="text-gray-400">Phone number</Label>
-                      <Input
-                        id="phone-input"
-                        type="tel"
-                        inputMode="tel"
-                        placeholder="e.g. +14155550123"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        required
-                        className="bg-gray-900 border-gray-800 text-white"
-                      />
-                    </div>
-                    <Button type="submit" className="w-full h-12 bg-white text-black hover:bg-gray-100" disabled={isLoading}>
-                      {isLoading ? 'Sending code...' : 'Send code'}
-                    </Button>
-                    <button type="button" onClick={() => setMode('email')} className="text-sm text-gray-400 hover:text-white">
-                      Use a different method
-                    </button>
-                  </form>
-                ) : (
-                  <form onSubmit={handlePhoneVerify} className="space-y-4">
-                    <div>
-                      <Label htmlFor="otp-input" className="text-gray-400">Enter code</Label>
-                      <Input
-                        id="otp-input"
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        placeholder="6-digit code"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        required
-                        className="bg-gray-900 border-gray-800 text-white"
-                      />
-                    </div>
-                    <Button type="submit" className="w-full h-12 bg-white text-black hover:bg-gray-100" disabled={isLoading}>
-                      {isLoading ? 'Verifying...' : 'Verify'}
-                    </Button>
-                    <button type="button" onClick={() => { setOtp(''); setOtpSent(false); }} className="text-sm text-gray-400 hover:text-white">
-                      Resend or change number
-                    </button>
-                  </form>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>

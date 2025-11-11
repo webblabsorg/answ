@@ -35,8 +35,7 @@ import {
   ClipboardListIcon,
   LightbulbIcon,
   TrendingUpIcon,
-  FileCogIcon,
-  ImageIcon,
+  TimerIcon,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -46,9 +45,10 @@ interface CollapsibleSidebarProps {
   onNewChat: () => void;
   onAuthPrompt: () => void;
   onHover?: (isHovering: boolean) => void;
+  onOpenHomework?: () => void;
 }
 
-export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthPrompt, onHover }: CollapsibleSidebarProps) {
+export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthPrompt, onHover, onOpenHomework }: CollapsibleSidebarProps) {
   const router = useRouter();
   const { isAuthenticated, user, clearAuth } = useAuthStore();
   const [exploreOpen, setExploreOpen] = useState(false);
@@ -77,18 +77,21 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
   ];
 
   const libraryApps = [
-    { name: 'Flashcards', icon: BookOpenIcon },
-    { name: 'Vocabulary Builder', icon: BrainIcon },
-    { name: 'Formula Sheets', icon: FileTextIcon },
-    { name: 'Note Taker', icon: Pencil },
+    { name: 'Vocabulary Builder', icon: BrainIcon, description: 'Grow word mastery' },
+    { name: 'Formula Sheets', icon: FileTextIcon, description: 'Quick math references' },
+    { name: 'Note Taker', icon: Pencil, description: 'Capture study notes' },
+    { name: 'My Notes', icon: Pencil, description: 'Personal notes hub' },
+    { name: 'Saved Explanations', icon: LightbulbIcon, description: 'Bookmark AI answers' },
+    { name: 'Practice History', icon: ClipboardListIcon, description: 'Past tests archive' },
+    { name: 'Study Resources', icon: BookOpenIcon, description: 'Community materials' },
   ];
 
 
   const exams = [
-    { name: 'GRE', icon: '🎓' },
-    { name: 'SAT', icon: '📚' },
-    { name: 'GMAT', icon: '💼' },
-    { name: 'TOEFL', icon: '🌍' },
+    { name: 'GRE', icon: '🎓', description: 'Graduate admissions test' },
+    { name: 'SAT', icon: '📚', description: 'College admissions test' },
+    { name: 'GMAT', icon: '💼', description: 'Business school exam' },
+    { name: 'TOEFL', icon: '🌍', description: 'English proficiency test' },
   ];
 
   const tools = [
@@ -98,8 +101,17 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
     { name: 'Study Plan', icon: CalendarIcon, path: '/study-plan', description: 'Personalized learning path' },
     { name: 'Grammar', icon: CheckSquareIcon, path: '/tools/grammar', description: 'Grammar and writing assistance' },
     { name: 'Calculators', icon: CalculatorIcon, path: '/tools/calculators', description: 'Academic & scientific calculators' },
-    { name: 'File Conversion', icon: FileCogIcon, path: '/tools/file-conversion', description: 'Convert documents and files' },
-    { name: 'Image Editors', icon: ImageIcon, path: '/tools/image-editors', description: 'Edit and annotate images' },
+    { name: 'Citation Generator', icon: ClipboardListIcon, path: '/tools/citation', description: 'APA/MLA/Chicago citations' },
+    { name: 'Flashcards', icon: BookOpenIcon, path: '/tools/flashcards', description: 'Spaced repetition practice' },
+    { name: 'Study Timer', icon: TimerIcon, path: '/tools/study-timer', description: 'Pomodoro focus timer' },
+  ];
+
+  const exploreItems = [
+    { name: 'Study Strategies', description: 'Proven methods guide' },
+    { name: 'Exam Tips', description: 'Tips for exams' },
+    { name: 'Trending Topics', description: 'Popular study themes' },
+    { name: 'Study Groups', description: 'Connect with peers' },
+    { name: 'Leaderboards', description: 'Top performers lists' },
   ];
 
   const handleItemClick = (path?: string) => {
@@ -287,13 +299,19 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             {exploreOpen ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
           </button>
           {exploreOpen && (
-            <div className="ml-6 mt-2 space-y-1">
-              <button onClick={() => handleItemClick()} className="block text-sm text-gray-400 hover:text-white py-1">
-                Study Strategies
-              </button>
-              <button onClick={() => handleItemClick()} className="block text-sm text-gray-400 hover:text-white py-1">
-                Exam Tips
-              </button>
+            <div className="space-y-1 mt-2">
+              {exploreItems.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => handleItemClick()}
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                >
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-300 group-hover:text-white transition-colors">{item.name}</div>
+                    <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">{item.description}</div>
+                  </div>
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -311,15 +329,18 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             {examsOpen ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
           </button>
           {examsOpen && (
-            <div className="ml-6 mt-2 space-y-1">
-              {['GRE','SAT','GMAT'].map((name) => (
+            <div className="space-y-1 mt-2">
+              {exams.map((exam) => (
                 <button
-                  key={name}
+                  key={exam.name}
                   onClick={() => handleItemClick()}
-                  className="w-full text-left text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2"
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
                 >
-                  <span>🎓</span>
-                  <span>{name}</span>
+                  <span className="mt-0.5">{exam.icon}</span>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-300 group-hover:text-white transition-colors">{exam.name}</div>
+                    <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">{exam.description}</div>
+                  </div>
                 </button>
               ))}
               <button
@@ -378,11 +399,19 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             {libraryOpen ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
           </button>
           {libraryOpen && (
-            <div className="ml-6 mt-2 space-y-1">
+            <div className="space-y-1 mt-2">
               {libraryApps.map(app => (
-                <button key={app.name} onClick={() => handleItemClick()} className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2">
-                  <app.icon className="h-3 w-3" />
-                  <span>{app.name}</span>
+                <button
+                  key={app.name}
+                  onClick={() => handleItemClick()}
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                  title={app.description}
+                >
+                  <app.icon className="h-3 w-3 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-300 group-hover:text-white transition-colors">{app.name}</div>
+                    <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">{app.description}</div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -405,14 +434,45 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             <div className="ml-6 mt-2 space-y-1">
               {/* Project items */}
               <div className="space-y-1">
-                <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick('/projects/homeworks')}>
-                  <Pencil className="h-3 w-3" /> Homeworks
+                <button
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                  onClick={() => { if (!isAuthenticated) { onAuthPrompt(); return; } if (onOpenHomework) { onOpenHomework(); } else { router.push('/projects/homeworks'); } }}
+                >
+                  <Pencil className="h-3 w-3 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-300 group-hover:text-white transition-colors">Homework</div>
+                    <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">Track assignments</div>
+                  </div>
                 </button>
-                <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
-                  <FileTextIcon className="h-3 w-3" /> Essays
+                <button
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                  onClick={() => handleItemClick()}
+                >
+                  <FileTextIcon className="h-3 w-3 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-300 group-hover:text-white transition-colors">Essays</div>
+                    <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">Write and manage</div>
+                  </div>
                 </button>
-                <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
-                  <BrainIcon className="h-3 w-3" /> Deep Research
+                <button
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                  onClick={() => handleItemClick()}
+                >
+                  <ClipboardListIcon className="h-3 w-3 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-300 group-hover:text-white transition-colors">Mock Exam</div>
+                    <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">Full-length practice</div>
+                  </div>
+                </button>
+                <button
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                  onClick={() => handleItemClick()}
+                >
+                  <CalendarIcon className="h-3 w-3 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-300 group-hover:text-white transition-colors">Study Plan</div>
+                    <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">Multi-week roadmap</div>
+                  </div>
                 </button>
               </div>
 

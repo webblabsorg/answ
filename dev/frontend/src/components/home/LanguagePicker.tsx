@@ -135,7 +135,9 @@ export function LanguagePicker() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[0]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -154,6 +156,50 @@ export function LanguagePicker() {
     };
   }, [isOpen]);
 
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const filteredLangs = LANGUAGES.filter((lang) =>
+        lang.nativeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lang.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      switch (event.key) {
+        case 'Escape':
+          event.preventDefault();
+          setIsOpen(false);
+          setSearchQuery('');
+          break;
+        case 'ArrowDown':
+          event.preventDefault();
+          setFocusedIndex((prev) => Math.min(prev + 1, filteredLangs.length - 1));
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          setFocusedIndex((prev) => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          if (filteredLangs[focusedIndex]) {
+            event.preventDefault();
+            handleLanguageSelect(filteredLangs[focusedIndex]);
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, searchQuery, focusedIndex]);
+
   const filteredLanguages = LANGUAGES.filter((lang) =>
     lang.nativeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     lang.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -163,6 +209,7 @@ export function LanguagePicker() {
     setSelectedLanguage(language);
     setIsOpen(false);
     setSearchQuery('');
+    setFocusedIndex(0);
     // Here you can add logic to actually change the language
     console.log('Selected language:', language.code);
   };
@@ -172,40 +219,54 @@ export function LanguagePicker() {
       {/* Globe Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-gray-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="inline-flex h-6 w-6 items-center justify-center rounded-md text-gray-400 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         title={`Language: ${selectedLanguage.nativeName}`}
-        aria-label="Language"
+        aria-label="Language selector"
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
-        <Globe className="h-5 w-5" />
+        <Globe className="h-4 w-4" />
       </button>
 
       {/* Language Picker Dropdown */}
       {isOpen && (
-        <div className="absolute bottom-full right-0 mb-2 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-2xl overflow-hidden z-[110]">
+        <div 
+          className="absolute bottom-full right-0 mb-2 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-2xl overflow-hidden z-[110]"
+          role="menu"
+          aria-label="Language selection"
+        >
           {/* Search Input */}
           <div className="p-3 border-b border-gray-800">
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search languages..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setFocusedIndex(0);
+              }}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Search languages"
             />
           </div>
 
           {/* Language List */}
-          <div className="max-h-96 overflow-y-auto">
-            {filteredLanguages.map((language) => (
+          <div className="max-h-96 overflow-y-auto" role="group">
+            {filteredLanguages.map((language, index) => (
               <button
                 key={language.code}
                 onClick={() => handleLanguageSelect(language)}
+                onMouseEnter={() => setFocusedIndex(index)}
                 className={`w-full px-4 py-2.5 text-left hover:bg-gray-800 transition-colors ${
                   selectedLanguage.code === language.code
                     ? 'bg-gray-800 text-white'
+                    : focusedIndex === index
+                    ? 'bg-gray-800/50 text-white'
                     : 'text-gray-300'
                 }`}
+                role="menuitemradio"
+                aria-checked={selectedLanguage.code === language.code}
               >
                 <div className="text-sm font-medium">{language.nativeName}</div>
                 {language.nativeName !== language.name && (

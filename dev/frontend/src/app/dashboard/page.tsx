@@ -9,6 +9,7 @@ import { ChatLayout } from '@/components/layout';
 import { ChatInterface } from '@/components/chat';
 
 // Force dynamic rendering (disable static generation)
+import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic';
 
 function DashboardContent() {
@@ -61,7 +62,8 @@ function DashboardContent() {
   };
 
   if (!isAuthenticated) {
-    return null;
+    redirect('/')
+    return null
   }
 
   return (
