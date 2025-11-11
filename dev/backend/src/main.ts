@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import { AppModule } from './app.module';
+import type { Request, Response } from 'express';
 
 async function bootstrap() {
   // Enable access to rawBody for Stripe webhook signature verification
@@ -44,6 +45,22 @@ async function bootstrap() {
       return callback(new Error(`CORS blocked for origin: ${origin}`), false);
     },
     credentials: true,
+  });
+
+  // Explicit CORS header reflection for localhost to override any stale settings
+  app.use((req: Request, res: Response, next) => {
+    const origin = req.headers.origin as string | undefined;
+    if (origin && /^http:\/\/(localhost|127\.0\.0\.1)(:\\d+)?$/.test(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+      if (req.method === 'OPTIONS') {
+        return res.sendStatus(204);
+      }
+    }
+    next();
   });
 
   // Swagger API documentation
