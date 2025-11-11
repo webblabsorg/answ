@@ -24,7 +24,7 @@ export function GroupManagement({ homeworkId }: { homeworkId: string }) {
   });
 
   const createGroup = useMutation({
-    mutationFn: async (name: string) => apiClient.post(`/homework/groups`, { homework_id: homeworkId, name }),
+    mutationFn: async (name: string) => apiClient.post(`/homework/groups`, { homework_id: homeworkId, name, member_ids: [] }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["groups", homeworkId] }),
   });
 
@@ -34,8 +34,8 @@ export function GroupManagement({ homeworkId }: { homeworkId: string }) {
   });
 
   const addMember = useMutation({
-    mutationFn: async ({ groupId, email }: { groupId: string; email: string }) =>
-      apiClient.post(`/homework/groups/${groupId}/members`, { student_email: email }),
+    mutationFn: async ({ groupId, studentId }: { groupId: string; studentId: string }) =>
+      apiClient.post(`/homework/groups/${groupId}/members`, { student_id: studentId }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["groups", homeworkId] }),
   });
 
@@ -79,8 +79,8 @@ export function GroupManagement({ homeworkId }: { homeworkId: string }) {
 
             {selectedGroupId === g.id && (
               <div className="mt-3 flex items-center gap-2">
-                <input value={addEmail} onChange={(e) => setAddEmail(e.target.value)} placeholder="Student email" className="px-3 py-2 bg-gray-900 border border-gray-800 rounded text-sm" />
-                <button onClick={() => { if (addEmail.trim()) { addMember.mutate({ groupId: g.id, email: addEmail.trim() }); setAddEmail(""); } }} className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Add Member</button>
+                <input value={addEmail} onChange={(e) => setAddEmail(e.target.value)} placeholder="Student ID" className="px-3 py-2 bg-gray-900 border border-gray-800 rounded text-sm" />
+                <button onClick={() => { if (addEmail.trim()) { addMember.mutate({ groupId: g.id, studentId: addEmail.trim() }); setAddEmail(""); } }} className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Add Member</button>
               </div>
             )}
           </div>
