@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { XIcon, SparklesIcon } from 'lucide-react';
+import { XIcon, GraduationCapIcon } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -15,13 +15,16 @@ interface RightAuthPanelProps {
 
 export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
   const setAuth = useAuthStore((state) => state.setAuth);
-  const [mode, setMode] = useState<'email' | 'login' | 'signup'>('email');
+  const [mode, setMode] = useState<'email' | 'login' | 'signup' | 'phone'>('email');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +39,58 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
   const handleAppleLogin = () => {
     // Implement Apple OAuth
     console.log('Apple login');
+  };
+
+  const handleMicrosoftLogin = async () => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const { signInWithMicrosoft } = await import('@/lib/auth/microsoft');
+      const ms = await signInWithMicrosoft();
+      if (ms?.idToken) {
+        // Exchange with backend (ensure endpoint exists)
+        const resp = await apiClient.post('/auth/microsoft', { id_token: ms.idToken });
+        const { user, access_token } = resp.data;
+        setAuth(user, access_token);
+        onClose();
+      } else {
+        setError('Microsoft sign-in not available.');
+      }
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Microsoft sign-in failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneStart = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    try {
+      await apiClient.post('/auth/phone/start', { phone });
+      setOtpSent(true);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to send code');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    try {
+      const resp = await apiClient.post('/auth/phone/verify', { phone, code: otp });
+      const { user, access_token } = resp.data;
+      setAuth(user, access_token);
+      onClose();
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Invalid code');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -79,7 +134,16 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+        role="button"
+        tabIndex={0}
+        aria-label="Close sign in"
         onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClose();
+          }
+        }}
       />
 
       {/* Panel */}
@@ -88,12 +152,13 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <SparklesIcon className="h-6 w-6 text-blue-500" />
+              <GraduationCapIcon className="h-6 w-6 text-blue-500" />
               <span className="text-lg font-bold">answly</span>
             </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-900 rounded-lg transition-colors"
+              aria-label="Close sign in panel"
             >
               <XIcon className="h-5 w-5" />
             </button>
@@ -121,8 +186,9 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
                   onClick={handleGoogleLogin}
                   variant="outline"
                   className="w-full h-12 bg-white text-black hover:bg-gray-100 border-0"
+                  aria-label="Continue with Google"
                 >
-                  <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                     <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -135,11 +201,39 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
                   onClick={handleAppleLogin}
                   variant="outline"
                   className="w-full h-12 bg-white text-black hover:bg-gray-100 border-0"
+                  aria-label="Continue with Apple"
                 >
-                  <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
                   </svg>
                   Continue with Apple
+                </Button>
+
+                <Button
+                  onClick={handleMicrosoftLogin}
+                  variant="outline"
+                  className="w-full h-12 bg-white text-black hover:bg-gray-100 border-0"
+                  aria-label="Continue with Microsoft"
+                >
+                  <svg className="h-5 w-5 mr-2" viewBox="0 0 23 23" aria-hidden="true">
+                    <path fill="#f35325" d="M1 1h10v10H1z"/>
+                    <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                    <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                    <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                  </svg>
+                  Continue with Microsoft
+                </Button>
+
+                <Button
+                  onClick={() => setMode('phone')}
+                  variant="outline"
+                  className="w-full h-12 bg-white text-black hover:bg-gray-100 border-0"
+                  aria-label="Continue with phone"
+                >
+                  <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="currentColor" d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2m0 18H7V5h10Z"/>
+                  </svg>
+                  Continue with phone
                 </Button>
 
                 <div className="relative">
@@ -277,6 +371,57 @@ export function RightAuthPanel({ isOpen, onClose }: RightAuthPanelProps) {
                   Already have an account? Login
                 </button>
               </form>
+            )}
+
+            {mode === 'phone' && (
+              <div className="space-y-4">
+                {!otpSent ? (
+                  <form onSubmit={handlePhoneStart} className="space-y-4">
+                    <div>
+                      <Label htmlFor="phone-input" className="text-gray-400">Phone number</Label>
+                      <Input
+                        id="phone-input"
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="e.g. +14155550123"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        required
+                        className="bg-gray-900 border-gray-800 text-white"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full h-12 bg-white text-black hover:bg-gray-100" disabled={isLoading}>
+                      {isLoading ? 'Sending code...' : 'Send code'}
+                    </Button>
+                    <button type="button" onClick={() => setMode('email')} className="text-sm text-gray-400 hover:text-white">
+                      Use a different method
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handlePhoneVerify} className="space-y-4">
+                    <div>
+                      <Label htmlFor="otp-input" className="text-gray-400">Enter code</Label>
+                      <Input
+                        id="otp-input"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="6-digit code"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        required
+                        className="bg-gray-900 border-gray-800 text-white"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full h-12 bg-white text-black hover:bg-gray-100" disabled={isLoading}>
+                      {isLoading ? 'Verifying...' : 'Verify'}
+                    </Button>
+                    <button type="button" onClick={() => { setOtp(''); setOtpSent(false); }} className="text-sm text-gray-400 hover:text-white">
+                      Resend or change number
+                    </button>
+                  </form>
+                )}
+              </div>
             )}
           </div>
         </div>

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@axe-core/react": "^4.11.0",
+    "@azure/msal-browser": "^4.26.1",
     "@next/eslint-plugin-next": "^16.0.1",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-checkbox": "^1.0.4",

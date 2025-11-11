@@ -108,12 +108,21 @@ export default function EssayReviewPage() {
                 {essays.map((essay) => (
                   <div
                     key={essay.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setSelectedEssay(essay)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedEssay(essay);
+                      }
+                    }}
                     className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                       selectedEssay?.id === essay.id
                         ? 'border-indigo-600 bg-indigo-50'
                         : 'border-gray-200 hover:border-indigo-400'
                     }`}
+                    aria-label={`Review essay by ${essay.user.name} on ${essay.question.topic}`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <Badge>{essay.question.topic}</Badge>
@@ -156,9 +165,9 @@ export default function EssayReviewPage() {
 
                 {/* Question */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <p className="block text-sm font-medium text-gray-700 mb-2">
                     Question
-                  </label>
+                  </p>
                   <p className="text-sm text-gray-900 p-3 bg-gray-50 rounded">
                     {selectedEssay.question.question_text}
                   </p>
@@ -166,9 +175,9 @@ export default function EssayReviewPage() {
 
                 {/* Essay Answer */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <p className="block text-sm font-medium text-gray-700 mb-2">
                     Student Answer
-                  </label>
+                  </p>
                   <div className="p-3 bg-gray-50 rounded max-h-48 overflow-y-auto">
                     <p className="text-sm text-gray-900 whitespace-pre-wrap">
                       {typeof selectedEssay.user_answer === 'object'
@@ -180,10 +189,11 @@ export default function EssayReviewPage() {
 
                 {/* Score Input */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="score-input" className="block text-sm font-medium text-gray-700 mb-2">
                     Score (0-100)
                   </label>
                   <Input
+                    id="score-input"
                     type="number"
                     min="0"
                     max="100"
@@ -195,10 +205,11 @@ export default function EssayReviewPage() {
 
                 {/* Feedback */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="feedback-textarea" className="block text-sm font-medium text-gray-700 mb-2">
                     Feedback (optional)
                   </label>
                   <Textarea
+                    id="feedback-textarea"
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
                     placeholder="Provide detailed feedback..."

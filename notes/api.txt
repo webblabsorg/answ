@@ -1,0 +1,16 @@
+⛬  AI/APIs already integrated
+   •  OpenAI, Anthropic, Cohere (via LangChain); Pinecone (vector store); Redis/BullMQ (queues/cache); RAG orchestration; Voice
+      (Web Speech API); Sentry; Socket.io.
+
+   AI/APIs to add next
+   •  Monetization: Stripe (subscriptions, webhooks, usage metering/quotas).
+   •  Auth/Enterprise: Google/Microsoft OAuth and SAML SSO; API keys/OAuth2 for public API; LMS LTI 1.3; Proctoring (e.g.,
+      ProctorU/Proctorio).
+   •  Optional production add‑ons: Managed STT/TTS (Whisper/Azure/Polly), email provider (SendGrid/SES), object storage (S3),
+      analytics (PostHog/Amplitude).
+
+   Will it “just work” after adding APIs?
+
+   No—adding keys is necessary but not sufficient: you must configure envs, create Pinecone indexes, run queue workers, set
+   routing/prompts, enable rate limits/caching, wire billing webhooks and quotas, and hook UI/permissions; I can guide setup
+   step‑by‑step for whichever path (MVP, Phase 3, or enterprise) you choose.

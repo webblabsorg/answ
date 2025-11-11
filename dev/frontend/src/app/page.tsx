@@ -12,9 +12,7 @@ import {
   ArrowRightIcon,
   HelpCircle,
 } from 'lucide-react';
-import { LanguagePicker } from '@/components/home/LanguagePicker';
 import { PricingModal } from '@/components/pricing/PricingModal';
-import { CurrencyPicker } from '@/components/home/CurrencyPicker';
 
 export default function HomePage() {
   const router = useRouter();
@@ -44,6 +42,18 @@ export default function HomePage() {
       setShowAuthPanel(true);
     }
   };
+
+  // Auto show auth modal on first visit when not authenticated; persist dismissal
+  useEffect(() => {
+    if (!isAuthenticated) {
+      try {
+        const dismissed = localStorage.getItem('auth_modal_dismissed');
+        if (dismissed !== '1') {
+          setShowAuthPanel(true);
+        }
+      } catch {}
+    }
+  }, [isAuthenticated]);
 
   const handleNewChat = () => {
     // Create new chat
@@ -79,15 +89,24 @@ export default function HomePage() {
   return (
     <div className="relative h-screen bg-black text-white overflow-hidden">
       {/* Backdrop for expanded sidebar */}
-      {sidebarExpanded && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-40 transition-opacity duration-300"
-          onClick={() => setSidebarExpanded(false)}
-        />
-      )}
+        {sidebarExpanded && (
+          <div 
+            className="fixed inset-0 bg-black/20 z-40 transition-opacity duration-300"
+            role="button"
+            tabIndex={0}
+            aria-label="Close sidebar overlay"
+            onClick={() => setSidebarExpanded(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setSidebarExpanded(false);
+              }
+            }}
+          />
+        )}
 
       {/* Collapsible Sidebar - Fixed overlay */}
-      <div className="fixed left-0 top-0 bottom-0 z-50 transition-all duration-300">
+      <div className="fixed left-0 top-0 bottom-0 z-50 transition-all duration-300 pointer-events-none">
         <CollapsibleSidebar
           isExpanded={sidebarExpanded}
           onToggle={() => setSidebarExpanded(!sidebarExpanded)}
@@ -106,16 +125,13 @@ export default function HomePage() {
             <span className="text-lg font-semibold">answly</span>
           </div>
           
-          {/* Upgrade + Currency */}
-          <div className="flex items-center gap-2">
-            <CurrencyPicker />
-            <button 
-              onClick={() => setShowPricingModal(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              Upgrade
-            </button>
-          </div>
+          {/* Upgrade */}
+          <button 
+            onClick={() => setShowPricingModal(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Upgrade
+          </button>
         </div>
 
         {/* Main Content Area */}
@@ -179,18 +195,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Clean Footer */}
-        <div className="px-6 py-4 flex items-center justify-between">
-          {/* Left: Copyright, Privacy, Terms */}
-          <div className="flex items-center gap-4 text-gray-500 text-xs">
-            <span>© 2025 Answly</span>
-            <button className="hover:text-white transition-colors">Privacy</button>
-            <button className="hover:text-white transition-colors">Terms</button>
-          </div>
-
-          {/* Right: Language Picker & Help Icon */}
+        {/* Footer (reduced) */}
+        <div className="px-6 py-4 flex items-center justify-end">
           <div className="flex items-center gap-3">
-            <LanguagePicker />
             <button 
               className="text-gray-500 hover:text-white transition-colors p-1"
               title="Help"
@@ -204,7 +211,7 @@ export default function HomePage() {
       {/* Right Auth Panel */}
       <RightAuthPanel
         isOpen={showAuthPanel}
-        onClose={() => setShowAuthPanel(false)}
+        onClose={() => { try { localStorage.setItem('auth_modal_dismissed', '1'); } catch {}; setShowAuthPanel(false); }}
       />
 
       {/* Pricing Modal */}

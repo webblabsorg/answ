@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,19 +30,10 @@ type Currency = {
   code: string;
   symbol: string;
   rate: number;
+  name?: string;
 };
 
 type PlanType = 'personal' | 'business';
-
-const currencies: Currency[] = [
-  { code: 'USD', symbol: '$', rate: 1 },
-  { code: 'EUR', symbol: '€', rate: 0.92 },
-  { code: 'GBP', symbol: '£', rate: 0.79 },
-  { code: 'CAD', symbol: 'C$', rate: 1.35 },
-  { code: 'AUD', symbol: 'A$', rate: 1.52 },
-  { code: 'JPY', symbol: '¥', rate: 149 },
-  { code: 'INR', symbol: '₹', rate: 83 },
-];
 
 export function PricingModal({ isOpen, onClose }: PricingModalProps) {
   const currencyStore = useCurrencyStore();
@@ -51,6 +42,44 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
     symbol: currencyStore.symbol,
     rate: currencyStore.rate,
   });
+  const [currencyList, setCurrencyList] = useState<Currency[]>([]);
+
+  useEffect(() => {
+    // Build dynamic currency list (120-150+) from runtime; fallback to a curated set
+    const buildList = () => {
+      let codes: string[] = [];
+      try {
+        const maybeSupported = (Intl as any).supportedValuesOf?.('currency');
+        if (Array.isArray(maybeSupported) && maybeSupported.length > 0) {
+          codes = maybeSupported;
+        }
+      } catch {}
+      if (codes.length === 0) {
+        codes = [
+          'USD','EUR','GBP','JPY','AUD','CAD','CHF','CNY','HKD','SGD','SEK','NOK','DKK','PLN','CZK','HUF','TRY','ILS','AED','SAR','QAR','KWD','BHD','INR','IDR','MYR','THB','VND','PHP','KRW','TWD','NZD','BRL','MXN','ARS','CLP','COP','PEN','UYU','ZAR','EGP','NGN','KES','GHS','MAD','TND','RUB','UAH','RON','BGN','HRK','ISK','PKR','BDT','LKR','NPR','ETB','TZS','UGX','DOP','JMD','XOF','XAF','XPF','MUR','MZN','AOA','BWP','ZMW','GEL','AZN','KZT','UZS','TJS','KGS','LAK','MMK','BND','FJD','PGK','WST','TOP','SBD','VUV','JOD','LBP','DZD','BBD','BSD','BZD','GYD','SRD','TTD','XCD','BMD','BAM','MKD','MDL','ALL','AMD','MNT','NAD','BAM','RSD','BYN','BOB','CRC','GTQ','HNL','NIO','PAB','CRC','KYD','BZD','ANG','AWG','HTG','CDF','RWF','BIF','SOS','SDG','LYD','MRU','XOF','XAF'
+        ];
+      }
+      const displayNames = (() => {
+        try { return new (Intl as any).DisplayNames([navigator.language || 'en'], { type: 'currency' }); } catch { return null; }
+      })();
+      const list = codes.map((code) => {
+        let symbol = '$';
+        try { symbol = (0).toLocaleString(undefined, { style: 'currency', currency: code }).replace(/[\d.,\s]/g, '').trim() || '$'; } catch {}
+        const name = displayNames?.of?.(code) || code;
+        return { code, symbol, rate: 1, name } as Currency;
+      });
+      // Ensure USD first
+      list.sort((a, b) => (a.code === 'USD' ? -1 : b.code === 'USD' ? 1 : a.code.localeCompare(b.code)));
+      setCurrencyList(list);
+      // If current store currency is present, keep it, else default to first
+      const found = list.find(c => c.code === currencyStore.code) || list[0];
+      if (found && found.code !== selectedCurrency.code) {
+        setSelectedCurrency(found);
+      }
+    };
+    buildList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     // sync with global currency picker
     setSelectedCurrency({
@@ -61,9 +90,25 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
   }, [currencyStore.code, currencyStore.symbol, currencyStore.rate]);
   const [planType, setPlanType] = useState<PlanType>('personal');
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [currencyQuery, setCurrencyQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useAuthStore();
   const [serverPrices, setServerPrices] = useState<Record<string, number> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  // Smooth scroll highlighted item into view on arrow navigation
+  useEffect(() => {
+    try {
+      const container = listRef.current;
+      if (!container) return;
+      const child = container.querySelectorAll('button')[highlightIndex] as HTMLElement | undefined;
+      if (child) {
+        child.scrollIntoView({ block: 'nearest' });
+      }
+    } catch {}
+  }, [highlightIndex, currencyQuery, currencyList]);
 
   // Fetch server pricing for selected currency to avoid client drift
   useEffect(() => {
@@ -333,8 +378,11 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
             {/* Currency Picker */}
             <div className="relative">
               <button
-                onClick={() => setShowCurrencyPicker(!showCurrencyPicker)}
+                onClick={() => { setCurrencyQuery(''); setShowCurrencyPicker(!showCurrencyPicker); setTimeout(() => searchInputRef.current?.focus(), 0); }}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                aria-haspopup="listbox"
+                aria-expanded={showCurrencyPicker}
+                aria-controls="currency-dropdown"
               >
                 <GlobeIcon className="h-4 w-4" />
                 <span>
@@ -342,39 +390,95 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                 </span>
               </button>
 
-              {showCurrencyPicker && (
+{showCurrencyPicker && (
                 <>
                   {/* Backdrop */}
                   <div
                     className="fixed inset-0 z-20"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Close currency selector"
                     onClick={() => setShowCurrencyPicker(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowCurrencyPicker(false);
+                      }
+                    }}
                   />
                   
                   {/* Currency Dropdown */}
-                  <div className="absolute bottom-full left-0 mb-2 w-48 bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-30 overflow-hidden">
-                    {currencies.map((currency) => (
+                  <div id="currency-dropdown" className="absolute bottom-full left-0 mb-2 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-30">
+                    {/* Search */}
+                    <div className="p-2 border-b border-gray-800">
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={currencyQuery}
+                        onChange={(e) => { setCurrencyQuery(e.target.value); setHighlightIndex(0); }}
+                        onKeyDown={(e) => {
+                          const filtered = currencyList.filter(c => (c.code + ' ' + (c.name || '')).toLowerCase().includes(currencyQuery.toLowerCase()));
+                          if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setHighlightIndex((i) => Math.min(i + 1, Math.max(filtered.length - 1, 0)));
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setHighlightIndex((i) => Math.max(i - 1, 0));
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const target = filtered[highlightIndex];
+                            if (target) {
+                              setSelectedCurrency(target);
+                              currencyStore.setCurrency({ code: target.code, symbol: target.symbol, rate: 1 } as any);
+                              try { localStorage.setItem('preferred_currency_code', target.code); } catch {}
+                              setShowCurrencyPicker(false);
+                            }
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            setShowCurrencyPicker(false);
+                          }
+                        }}
+                        placeholder="Search currency code or name..."
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div ref={listRef} className="max-h-80 overflow-y-auto" role="listbox" aria-label="Select currency">
+                      {currencyList
+                        .filter(c => (c.code + ' ' + (c.name || '')).toLowerCase().includes(currencyQuery.toLowerCase()))
+                        .map((currency, idx) => (
                       <button
                         key={currency.code}
+                        role="option"
+                        aria-selected={selectedCurrency.code === currency.code}
                         onClick={() => {
                           setSelectedCurrency(currency);
-                          // propagate to global store for consistency
+                          // propagate to global store for consistency and persist
                           currencyStore.setCurrency({
-                            code: currency.code as any,
+                            code: currency.code,
                             symbol: currency.symbol,
-                            rate: currency.rate,
+                            rate: 1,
                           } as any);
+                          try { localStorage.setItem('preferred_currency_code', currency.code); } catch {}
                           setShowCurrencyPicker(false);
                         }}
                         className={cn(
-                          'w-full px-4 py-2 text-left text-sm hover:bg-gray-800 transition-colors',
-                          selectedCurrency.code === currency.code
+                          'w-full px-4 py-2 text-left text-sm hover:bg-gray-800 transition-colors flex items-center gap-2',
+                          selectedCurrency.code === currency.code || idx === highlightIndex
                             ? 'bg-gray-800 text-white'
                             : 'text-gray-300'
                         )}
+                        title={currency.name || currency.code}
+                        onMouseEnter={() => setHighlightIndex(idx)}
                       >
-                        {currency.symbol} {currency.code}
+                        <span className="w-6 text-center">{currency.symbol}</span>
+                        <span className="font-mono w-14">{currency.code}</span>
+                        <span className="flex-1 truncate text-gray-400">{currency.name || ''}</span>
                       </button>
-                    ))}
+                      ))}
+                      {currencyList.filter(c => (c.code + ' ' + (c.name || '')).toLowerCase().includes(currencyQuery.toLowerCase())).length === 0 && (
+                        <div className="px-4 py-6 text-center text-gray-500 text-sm">No currencies found</div>
+                      )}
+                    </div>
                   </div>
                 </>
               )}

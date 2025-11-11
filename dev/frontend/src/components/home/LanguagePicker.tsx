@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 
 // 120 languages in their native scripts (Google Translate supported)
-const LANGUAGES = [
+export const LANGUAGES = [
   { code: 'en', name: 'English', nativeName: 'English' },
   { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
   { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },

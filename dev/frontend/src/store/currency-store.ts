@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 
-export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'INR' | 'BRL'
+export type CurrencyCode = string
 
 type CurrencyState = {
   code: CurrencyCode
   symbol: string
-  rate: number // vs USD
+  rate: number // vs USD (fallback only; server returns authoritative prices per currency)
   setCurrency: (c: { code: CurrencyCode; symbol: string; rate: number }) => void
 }
 

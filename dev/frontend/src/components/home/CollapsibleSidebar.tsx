@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import {
   UserIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  CalculatorIcon,
   SparklesIcon,
   GraduationCapIcon,
   PinIcon,
@@ -33,6 +35,8 @@ import {
   ClipboardListIcon,
   LightbulbIcon,
   TrendingUpIcon,
+  FileCogIcon,
+  ImageIcon,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -46,7 +50,7 @@ interface CollapsibleSidebarProps {
 
 export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthPrompt, onHover }: CollapsibleSidebarProps) {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, clearAuth } = useAuthStore();
   const [exploreOpen, setExploreOpen] = useState(false);
   const [examsOpen, setExamsOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(true);
@@ -55,6 +59,8 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
   const [adminOpen, setAdminOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [menuOpenIndex, setMenuOpenIndex] = useState<number | null>(null);
+  const [chatsOpen, setChatsOpen] = useState(true);
+  const [chatQuery, setChatQuery] = useState('');
   
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'REVIEWER';
 
@@ -90,11 +96,10 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
     { name: 'Practice Tests', icon: FileTextIcon, path: '/dashboard', description: 'Take practice exams' },
     { name: 'Performance Insights', icon: BarChartIcon, path: '/insights', description: 'View your progress' },
     { name: 'Study Plan', icon: CalendarIcon, path: '/study-plan', description: 'Personalized learning path' },
-    { name: 'My Performance', icon: BarChartIcon, path: '/analytics', description: 'Track your performance' },
-    { name: 'Usage & Limits', icon: ClipboardListIcon, path: '/usage', description: 'Track usage and plan limits' },
-    { name: 'Billing & Invoices', icon: FileTextIcon, path: '/billing/invoices', description: 'Manage billing and invoices' },
-    { name: 'Organization', icon: UsersIcon, path: '/organization', description: 'Manage your org & teams' },
-    { name: 'Recommendations', icon: LightbulbIcon, path: '/recommendations', description: 'Personalized tips and upgrades' },
+    { name: 'Grammar', icon: CheckSquareIcon, path: '/tools/grammar', description: 'Grammar and writing assistance' },
+    { name: 'Calculators', icon: CalculatorIcon, path: '/tools/calculators', description: 'Academic & scientific calculators' },
+    { name: 'File Conversion', icon: FileCogIcon, path: '/tools/file-conversion', description: 'Convert documents and files' },
+    { name: 'Image Editors', icon: ImageIcon, path: '/tools/image-editors', description: 'Edit and annotate images' },
   ];
 
   const handleItemClick = (path?: string) => {
@@ -119,89 +124,47 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
     }
   };
 
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
   if (!isExpanded) {
-    // Collapsed sidebar - icons only
+    // Collapsed sidebar - main icons only
     return (
       <div 
-        className="w-20 h-full bg-black text-white flex flex-col items-center py-6 space-y-3 border-r border-gray-800 shadow-lg transition-all duration-300 text-[11px]"
+        className="w-20 h-full bg-black text-white flex flex-col items-center py-6 space-y-4 border-r border-gray-800 shadow-lg transition-all duration-300 pointer-events-auto"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <button 
-          onClick={onToggle}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="answly"
-        >
+        {/* Logo */}
+        <button onClick={onToggle} className="p-2 hover:bg-gray-800 rounded-lg" title="answly">
           <GraduationCapIcon className="h-4 w-4" />
         </button>
-        
-        {/* Removed top-level New Chat from collapsed view to keep Chat under Projects */}
-
-        <button 
-          onClick={() => handleItemClick('/tutor')}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="AI Tutor"
-        >
-          <BrainIcon className="h-4 w-4" />
+        {/* Chats */}
+        <button onClick={() => handleItemClick('/tutor')} className="p-2 hover:bg-gray-800 rounded-lg" title="Chats">
+          <MessageSquareIcon className="h-4 w-4" />
         </button>
-
-        <button 
-          onClick={() => handleItemClick('/dashboard')}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="Practice Tests"
-        >
-          <FileTextIcon className="h-4 w-4" />
+        {/* Explore */}
+        <button onClick={() => handleItemClick()} className="p-2 hover:bg-gray-800 rounded-lg" title="Explore">
+          <CompassIcon className="h-4 w-4" />
         </button>
-
-        <button 
-          onClick={() => handleItemClick('/insights')}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="Performance Insights"
-        >
-          <BarChartIcon className="h-4 w-4" />
-        </button>
-
-        <button 
-          onClick={() => handleItemClick('/study-plan')}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="Study Plan"
-        >
-          <CalendarIcon className="h-4 w-4" />
-        </button>
-
-        <button 
-          onClick={() => handleItemClick()}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="Exams"
-        >
+        {/* Exams */}
+        <button onClick={() => handleItemClick()} className="p-2 hover:bg-gray-800 rounded-lg" title="Exams">
           <LayoutGridIcon className="h-4 w-4" />
         </button>
-
-        <div className="flex-1" />
-
-        {isAuthenticated && isAdmin && (
-          <button 
-            onClick={() => handleItemClick('/admin/review-queue')}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-            title="Admin Panel"
-          >
-            <ShieldIcon className="h-4 w-4 text-blue-500" />
-          </button>
-        )}
-
-        <button 
-          onClick={() => handleItemClick()}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="Upgrade"
-        >
-          <GraduationCapIcon className="h-4 w-4" />
+        {/* Tools */}
+        <button onClick={() => handleItemClick()} className="p-2 hover:bg-gray-800 rounded-lg" title="Tools">
+          <WrenchIcon className="h-4 w-4" />
         </button>
-
-        <button 
-          onClick={() => handleItemClick()}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          title="Profile"
-        >
+        {/* Library */}
+        <button onClick={() => handleItemClick()} className="p-2 hover:bg-gray-800 rounded-lg" title="Library">
+          <BookOpenIcon className="h-4 w-4" />
+        </button>
+        {/* Projects */}
+        <button onClick={() => handleItemClick()} className="p-2 hover:bg-gray-800 rounded-lg" title="Projects">
+          <FolderKanbanIcon className="h-4 w-4" />
+        </button>
+        <div className="flex-1" />
+        {/* Avatar */}
+        <button onClick={() => (isAuthenticated ? setIsPinned(false) : onAuthPrompt())} className="p-2 hover:bg-gray-800 rounded-lg" title="Profile">
           <UserIcon className="h-4 w-4" />
         </button>
       </div>
@@ -211,7 +174,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
   // Expanded sidebar
   return (
     <div 
-      className="w-60 h-full bg-black text-white flex flex-col border-r border-gray-800 shadow-2xl transition-all duration-300 text-xs"
+      className="w-60 h-full bg-black text-white flex flex-col border-r border-gray-800 shadow-2xl transition-all duration-300 pointer-events-auto"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -235,9 +198,18 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
         {/* Chat Section (top-level) */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="flex items-center gap-1 text-xs font-semibold text-gray-400 uppercase">
-              Chats <ChevronDownIcon className="h-3 w-3" />
-            </span>
+            <button
+              onClick={() => setChatsOpen(!chatsOpen)}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-400 uppercase hover:text-gray-300"
+              aria-expanded={chatsOpen}
+              aria-controls="recent-chats-list"
+            >
+              Chats {chatsOpen ? (
+                <ChevronDownIcon className="h-3 w-3" />
+              ) : (
+                <ChevronRightIcon className="h-3 w-3" />
+              )}
+            </button>
             <Button
               onClick={() => (isAuthenticated ? onNewChat() : onAuthPrompt())}
               className="h-8 px-2 py-1 text-xs bg-gray-900 hover:bg-gray-800 text-white border-0"
@@ -245,44 +217,61 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
               <PlusIcon className="h-3 w-3 mr-1" /> New
             </Button>
           </div>
-          <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
-            {recentChats.map((chat, i) => (
-              <div key={i} className="relative group">
-                <button
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors flex items-start gap-2"
-                >
-                  <MessageSquareIcon className="h-3 w-3 mt-0.5 flex-shrink-0 text-gray-400" />
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-gray-300 text-xs">{chat.title}</p>
-                    <p className="text-[10px] text-gray-500">{chat.time}</p>
-                  </div>
-                  <button
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-800"
-                    onClick={(e) => { e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); }}
-                    aria-label="Chat options"
-                  >
-                    <MoreHorizontal className="h-3 w-3 text-gray-400" />
-                  </button>
-                </button>
-                {menuOpenIndex === i && (
-                  <div className="absolute right-2 top-8 z-50 bg-black border border-gray-800 rounded-lg shadow-lg w-40 p-1 text-xs">
-                    <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
-                      <Share2 className="h-3 w-3" /> Share
-                    </button>
-                    <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
-                      <Pencil className="h-3 w-3" /> Rename
-                    </button>
-                    <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
-                      <Archive className="h-3 w-3" /> Archive
-                    </button>
-                    <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left text-red-500" onClick={() => setMenuOpenIndex(null)}>
-                      <Trash className="h-3 w-3" /> Delete
-                    </button>
-                  </div>
-                )}
+          {chatsOpen && (
+            <>
+              {/* Chat search */}
+              <div className="mb-2">
+                <input
+                  type="text"
+                  value={chatQuery}
+                  onChange={(e) => setChatQuery(e.target.value)}
+                  placeholder="Search conversations..."
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-md text-xs text-gray-300 placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
+                  aria-label="Search conversations"
+                />
               </div>
-            ))}
-          </div>
+              <div id="recent-chats-list" className="max-h-60 overflow-y-auto space-y-1 pr-1">
+                {recentChats
+                  .filter((c) => c.title.toLowerCase().includes(chatQuery.toLowerCase()))
+                  .map((chat, i) => (
+                  <div key={i} className="relative group">
+                    <button
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors flex items-start gap-2"
+                    >
+                      <MessageSquareIcon className="h-3 w-3 mt-0.5 flex-shrink-0 text-gray-400" />
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-gray-300 text-xs">{chat.title}</p>
+                        <p className="text-[10px] text-gray-500">{chat.time}</p>
+                      </div>
+                      <button
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-800"
+                        onClick={(e) => { e.stopPropagation(); setMenuOpenIndex(menuOpenIndex === i ? null : i); }}
+                        aria-label="Chat options"
+                      >
+                        <MoreHorizontal className="h-3 w-3 text-gray-400" />
+                      </button>
+                    </button>
+                    {menuOpenIndex === i && (
+                      <div className="absolute right-2 top-8 z-50 bg-black border border-gray-800 rounded-lg shadow-lg w-40 p-1 text-xs">
+                        <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                          <Share2 className="h-3 w-3" /> Share
+                        </button>
+                        <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                          <Pencil className="h-3 w-3" /> Rename
+                        </button>
+                        <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left" onClick={() => setMenuOpenIndex(null)}>
+                          <Archive className="h-3 w-3" /> Archive
+                        </button>
+                        <button className="w-full flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-900 text-left text-red-500" onClick={() => setMenuOpenIndex(null)}>
+                          <Trash className="h-3 w-3" /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Explore Section */}
@@ -323,16 +312,23 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
           </button>
           {examsOpen && (
             <div className="ml-6 mt-2 space-y-1">
-              {exams.map((exam) => (
+              {['GRE','SAT','GMAT'].map((name) => (
                 <button
-                  key={exam.name}
+                  key={name}
                   onClick={() => handleItemClick()}
                   className="w-full text-left text-sm text-gray-400 hover:text-white py-1 flex items-center gap-2"
                 >
-                  <span>{exam.icon}</span>
-                  <span>{exam.name}</span>
+                  <span>🎓</span>
+                  <span>{name}</span>
                 </button>
               ))}
+              <button
+                onClick={() => handleItemClick('/exams')}
+                className="w-full text-left text-sm text-blue-400 hover:text-white py-1"
+                title="See all exams"
+              >
+                More →
+              </button>
             </div>
           )}
         </div>
@@ -551,9 +547,9 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
       </div>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-gray-800 relative">
         <button
-          onClick={() => !isAuthenticated && onAuthPrompt()}
+          onClick={() => (isAuthenticated ? setShowUserMenu((v) => !v) : onAuthPrompt())}
           className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-900 transition-colors"
         >
           <div className="h-10 w-10 rounded-full bg-gray-800 flex items-center justify-center">
@@ -567,6 +563,33 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             <GraduationCapIcon className="h-5 w-5 text-gray-400" />
           )}
         </button>
+
+        {/* Inline legal links under username */}
+        <div className="mt-2 text-[11px] text-gray-500">
+          <span>© 2025 Answly</span>
+          <span className="mx-2">•</span>
+          <Link href="/privacy" className="hover:text-white" title="Privacy">Privacy</Link>
+          <span className="mx-2">•</span>
+          <Link href="/terms" className="hover:text-white" title="Terms">Terms</Link>
+        </div>
+
+        {/* User menu */}
+        {showUserMenu && isAuthenticated && (
+          <div className="absolute left-4 right-4 bottom-20 bg-black border border-gray-800 rounded-lg shadow-xl p-2 z-50">
+            <div className="px-2 py-2 text-xs text-gray-400">{user?.email}</div>
+            <div className="border-t border-gray-800 my-1" />
+            {user?.tier !== 'SCALE' && (
+              <button onClick={() => router.push('/upgrade')} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded" title="Upgrade Plan">Upgrade Plan</button>
+            )}
+            {user?.tier === 'SCALE' && (
+              <button onClick={() => router.push('/upgrade')} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded" title="Upgrade Options">Upgrade Options</button>
+            )}
+            <button onClick={() => router.push('/settings/personalization')} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded" title="Personalization Settings">Personalization Settings</button>
+            <button onClick={() => router.push('/help')} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded" title="Help / Support">Help / Support</button>
+            <button onClick={() => { clearAuth(); setShowUserMenu(false); router.push('/'); }} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded text-red-400" title="Logout">Logout</button>
+          </div>
+        )}
+
       </div>
     </div>
   );
