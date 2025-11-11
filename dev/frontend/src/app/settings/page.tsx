@@ -13,6 +13,7 @@ export default function SettingsPage() {
     { name: 'Usage & Limits', href: '/usage' },
     { name: 'Billing & Invoices', href: '/billing/invoices' },
     { name: 'Organizations', href: '/organization' },
+    { name: 'LMS Integrations', href: '/settings/lms' },
     { name: 'Recommendations', href: '/recommendations' },
   ]
 

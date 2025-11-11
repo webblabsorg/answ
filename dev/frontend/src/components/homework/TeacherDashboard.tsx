@@ -83,6 +83,7 @@ export function TeacherDashboard() {
                 <Link href={`/teacher/homework/${h.id}/groups`} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded">Groups</Link>
                 <Link href={`/teacher/homework/${h.id}/peer-reviews`} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded">Peer Reviews</Link>
                 <Link href={`/teacher/homework/${h.id}/analytics`} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded">Analytics</Link>
+                <button onClick={async () => { try { await apiClient.post('/lms/push-homework', { homeworkId: h.id }); alert('Pushed to LMS'); } catch (e) { alert('Failed to push'); } }} className="px-3 py-1 bg-white text-black hover:bg-gray-100 rounded">Push to LMS</button>
               </div>
             </div>
           ))}
