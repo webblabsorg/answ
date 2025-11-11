@@ -1,12 +1,17 @@
-FROM node:18-alpine
+FROM node:18-bullseye-slim
 
 WORKDIR /app
+
+# System deps for Prisma on Debian
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (tolerate peer dep conflicts for dev image)
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .

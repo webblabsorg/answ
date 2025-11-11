@@ -28,10 +28,3 @@ verify and validate the outcome below. Ensure All the features implemented are p
 review phase4-spec-parity in the notes\phases\addenda\ folder and implement it
 
 ----------
-
-Optional next steps (say the word and I’ll implement)
-•  Wire PricingModal to call backend GET /subscriptions/pricing/:currency instead of local rates; and pass country/currency to POST /subscriptions/checkout to trigger PayPal routing from the UI.
-•  Add Stripe Tax (jurisdiction detection and VAT/GST lines), and show VAT ID fields on org accounts.
-•  Dunning: retry schedule + email reminders for failed invoices.
-•  Regional providers: Razorpay/Mercado Pago/Alipay adapters behind feature flags.
-•  Admin revenue dashboard (MRR/ARR/churn/LTV/CAC) and CSV/PDF exports for tax summaries.

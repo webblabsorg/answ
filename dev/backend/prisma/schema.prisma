@@ -95,6 +95,7 @@ model User {
   granted_permissions UserPermission[]  @relation("GrantedPermissions")
   integrity_events   IntegrityEvent[]   @relation("IntegrityEvents")
   data_export_requests DataExportRequest[] @relation("DataExportRequests")
+  immutable_audit_logs ImmutableAuditLog[]
 
   @@index([email])
   @@index([role, tier])
@@ -253,6 +254,7 @@ model TestSession {
   user             User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
   exam             Exam              @relation(fields: [exam_id], references: [id], onDelete: Cascade)
   attempts         Attempt[]
+  integrity_events IntegrityEvent[]
 
   @@index([user_id, status])
   @@index([user_id, created_at])
@@ -624,7 +626,6 @@ model Organization {
   data_region        DataRegion        @default(US_EAST)
   dpa_accepted       Boolean           @default(false)
   dpa_accepted_at    DateTime?
-  audit_logs         AuditLog[]
   api_keys           APIKey[]
   user_permissions   UserPermission[]
   immutable_audit_logs ImmutableAuditLog[]

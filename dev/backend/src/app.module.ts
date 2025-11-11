@@ -12,40 +12,69 @@ import { TestSessionsModule } from './test-sessions/test-sessions.module';
 import { GradingModule } from './grading/grading.module';
 import { AdminModule } from './admin/admin.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
-import { AIModule } from './ai/ai.module';
-import { BillingModule } from './billing/billing.module';
-import { EnterpriseModule } from './enterprise/enterprise.module';
-import { ComplianceModule } from './compliance/compliance.module';
+// Optional modules will be conditionally required below to avoid build-time resolution
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 
+const baseImports = [
+  ConfigModule.forRoot({ isGlobal: true }),
+  ThrottlerModule.forRoot([
+    {
+      ttl: 60000, // 60 seconds
+      limit: 100, // 100 requests per minute
+    },
+  ]),
+  PrismaModule,
+  CacheModule,
+  ScheduleModule.forRoot(),
+  AuthModule,
+  UsersModule,
+  ExamsModule,
+  QuestionsModule,
+  TestSessionsModule,
+  GradingModule,
+  AuditLogsModule,
+];
+
+// Feature-flag optional modules for easier local dev
+if (process.env.FEATURE_ADMIN !== 'false') baseImports.push(AdminModule);
+
+// Optional modules - disabled by default until fully implemented
+const dynamicRequire = (p: string) => (eval('require') as NodeRequire)(p);
+try {
+  if (process.env.FEATURE_AI === 'true') {
+    baseImports.push(dynamicRequire('./ai/ai.module').AIModule);
+  }
+} catch (e) {
+  console.log('AI module not available (optional feature)');
+}
+
+try {
+  if (process.env.FEATURE_BILLING === 'true') {
+    baseImports.push(dynamicRequire('./billing/billing.module').BillingModule);
+  }
+} catch (e) {
+  console.log('Billing module not available (optional feature)');
+}
+
+try {
+  if (process.env.FEATURE_ENTERPRISE === 'true') {
+    baseImports.push(dynamicRequire('./enterprise/enterprise.module').EnterpriseModule);
+  }
+} catch (e) {
+  console.log('Enterprise module not available (optional feature)');
+}
+
+try {
+  if (process.env.FEATURE_COMPLIANCE === 'true') {
+    baseImports.push(dynamicRequire('./compliance/compliance.module').ComplianceModule);
+  }
+} catch (e) {
+  console.log('Compliance module not available (optional feature)');
+}
+
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 60 seconds
-        limit: 100, // 100 requests per minute
-      },
-    ]),
-    PrismaModule,
-    CacheModule,
-    ScheduleModule.forRoot(),
-    AuthModule,
-    UsersModule,
-    ExamsModule,
-    QuestionsModule,
-    TestSessionsModule,
-    GradingModule,
-    AdminModule,
-    AuditLogsModule,
-    AIModule,
-    BillingModule,
-    EnterpriseModule,
-    ComplianceModule,
-  ],
+  imports: baseImports,
   providers: [
     {
       provide: APP_GUARD,

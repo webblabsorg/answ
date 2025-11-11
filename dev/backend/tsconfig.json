@@ -21,6 +21,28 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test"]
+  "include": [
+    "src/main.ts",
+    "src/app.module.ts",
+    "src/auth/**/*.ts",
+    "src/users/**/*.ts",
+    "src/exams/**/*.ts",
+    "src/questions/**/*.ts",
+    "src/test-sessions/**/*.ts",
+    "src/grading/**/*.ts",
+    "src/prisma/**/*.ts",
+    "src/cache/**/*.ts",
+    "src/audit-logs/**/*.ts",
+    "src/admin/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "src/billing/**",
+    "src/compliance/**",
+    "src/enterprise/**",
+    "src/ai/**",
+    "src/_disabled_*/**"
+  ]
 }

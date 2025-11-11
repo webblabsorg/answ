@@ -13,7 +13,7 @@ import { TestSessionsService } from './test-sessions.service';
 import { CreateTestSessionDto } from './dto/create-test-session.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { QuotaGuard, RequireQuota } from '../billing/guards/quota.guard';
+import { QuotaGuard, RequireQuota } from './local-quota.guard';
 
 @ApiTags('Test Sessions')
 @Controller('test-sessions')

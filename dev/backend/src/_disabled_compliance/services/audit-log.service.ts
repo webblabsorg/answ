@@ -153,7 +153,7 @@ export class AuditLogService {
     if (startId) where.id = { gte: startId };
     if (endId) where.id = { lte: endId };
 
-    const logs = await this.prisma.auditLog.findMany({
+    const logs = await this.prisma.immutableAuditLog.findMany({
       where,
       orderBy: { timestamp: 'asc' },
     });
@@ -203,13 +203,13 @@ export class AuditLogService {
     startDate.setDate(startDate.getDate() - days);
 
     const [totalLogs, actionCounts, userActivity] = await Promise.all([
-      this.prisma.auditLog.count({
+      this.prisma.immutableAuditLog.count({
         where: {
           organization_id: organizationId,
           timestamp: { gte: startDate },
         },
       }),
-      this.prisma.auditLog.groupBy({
+      this.prisma.immutableAuditLog.groupBy({
         by: ['action'],
         where: {
           organization_id: organizationId,
@@ -217,7 +217,7 @@ export class AuditLogService {
         },
         _count: true,
       }),
-      this.prisma.auditLog.groupBy({
+      this.prisma.immutableAuditLog.groupBy({
         by: ['user_id'],
         where: {
           organization_id: organizationId,

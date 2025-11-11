@@ -213,7 +213,7 @@ export class ComplianceService {
     return {
       test_sessions: {
         last_30_days: recentTests,
-        30_90_days: oldTests,
+        '30_90_days': oldTests,
         over_1_year: veryOldTests,
         archival_candidates: veryOldTests,
       },
