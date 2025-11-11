@@ -85,8 +85,12 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login', redirectTo }:
             </DialogDescription>
           </DialogHeader>
 
-          {error && (
-            <div className="mb-3 p-2 bg-destructive/10 border border-destructive text-destructive rounded text-xs">
+{error && (
+            <div
+              className="mb-3 p-2 rounded text-xs font-medium border bg-red-500/20 border-red-500/70 text-red-300"
+              role="alert"
+              aria-live="assertive"
+            >
               {error}
             </div>
           )}

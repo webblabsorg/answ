@@ -12,7 +12,12 @@ import { UseGuards } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    // Allow any localhost port during development to avoid port drift issues (3000, 3001, etc.)
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin) return callback(null, true);
+      const ok = /^http:\/\/(localhost|127\.0\.0\.1)(:\\d+)?$/.test(origin);
+      return callback(ok ? null : new Error(`CORS blocked for origin: ${origin}`), ok);
+    },
     credentials: true,
   },
 })
