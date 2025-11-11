@@ -7,11 +7,14 @@ import { Button } from '@/components/ui/button'
 import { apiClient } from '@/lib/api-client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { UpgradePrompt } from '@/components/billing/UpgradePrompt'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 function StartTestButton({ examId, questionCount }: { examId: string; questionCount: number }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const [upgradePayload, setUpgradePayload] = useState<any>(null)
 
   const handleStartTest = async () => {
     if (questionCount === 0) {
@@ -30,16 +33,36 @@ function StartTestButton({ examId, questionCount }: { examId: string; questionCo
       router.push(`/test/${sessionId}`)
     } catch (error: any) {
       console.error('Failed to start test:', error)
-      alert(error.response?.data?.message || 'Failed to start test. Please try again.')
+      if (error?.response?.status === 403) {
+        setUpgradePayload({
+          reason: error.response?.data?.message,
+          usage: error.response?.data?.usage,
+          limits: error.response?.data?.limits,
+          featureType: 'test',
+        })
+        setUpgradeOpen(true)
+      } else {
+        alert(error.response?.data?.message || 'Failed to start test. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Button onClick={handleStartTest} disabled={loading || questionCount === 0}>
-      {loading ? 'Starting...' : questionCount === 0 ? 'No Questions Available' : 'Start Full Test'}
-    </Button>
+    <>
+      <Button onClick={handleStartTest} disabled={loading || questionCount === 0}>
+        {loading ? 'Starting...' : questionCount === 0 ? 'No Questions Available' : 'Start Full Test'}
+      </Button>
+      <UpgradePrompt
+        isOpen={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        reason={upgradePayload?.reason}
+        featureType={upgradePayload?.featureType}
+        usage={upgradePayload?.usage}
+        limits={upgradePayload?.limits}
+      />
+    </>
   )
 }
 

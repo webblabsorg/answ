@@ -24,9 +24,13 @@ import {
   ShieldIcon,
   CheckSquareIcon,
   UsersIcon,
-  DatabaseIcon
+  DatabaseIcon,
+  SparklesIcon,
+  LightbulbIcon,
+  TrendingUpIcon
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
+import { PricingModal } from '@/components/pricing/PricingModal';
 
 interface Exam {
   id: string;
@@ -59,6 +63,7 @@ export function AppSidebar({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(['STANDARDIZED_TEST'])
   );
+  const [showPricingModal, setShowPricingModal] = useState(false);
 
   // Group exams by category
   const examsByCategory = exams.reduce((acc, exam) => {
@@ -131,10 +136,19 @@ export function AppSidebar({
           {/* New Chat Button */}
           <Button
             onClick={onNewChat}
-            className="w-full bg-white text-gray-900 hover:bg-gray-100"
+            className="w-full bg-white text-gray-900 hover:bg-gray-100 mb-3"
           >
             <PlusIcon className="h-4 w-4 mr-2" />
             New Chat
+          </Button>
+
+          {/* Upgrade Button */}
+          <Button
+            onClick={() => setShowPricingModal(true)}
+            className="w-full bg-blue-600 text-white hover:bg-blue-500"
+          >
+            <SparklesIcon className="h-4 w-4 mr-2" />
+            Upgrade
           </Button>
         </div>
 
@@ -230,6 +244,36 @@ export function AppSidebar({
                   Study Plan
                 </Button>
               </Link>
+              <Link href="/usage" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <BarChartIcon className="h-4 w-4 mr-2" />
+                  Usage & Limits
+                </Button>
+              </Link>
+              <Link href="/billing/invoices" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <FileTextIcon className="h-4 w-4 mr-2" />
+                  Billing & Invoices
+                </Button>
+              </Link>
+              <Link href="/analytics" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <BarChartIcon className="h-4 w-4 mr-2" />
+                  My Performance
+                </Button>
+              </Link>
+              <Link href="/recommendations" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <LightbulbIcon className="h-4 w-4 mr-2" />
+                  Recommendations
+                </Button>
+              </Link>
+              <Link href="/organization" className="block">
+                <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                  <UsersIcon className="h-4 w-4 mr-2" />
+                  Organization
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -283,6 +327,18 @@ export function AppSidebar({
                 Admin
               </h3>
               <div className="space-y-1">
+                <Link href="/admin/analytics" className="block">
+                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                    <BarChartIcon className="h-4 w-4 mr-2" />
+                    Analytics Dashboard
+                  </Button>
+                </Link>
+                <Link href="/admin/predictions" className="block">
+                  <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+                    <TrendingUpIcon className="h-4 w-4 mr-2" />
+                    Predictions
+                  </Button>
+                </Link>
                 <Link href="/admin/review-queue" className="block">
                   <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
                     <CheckSquareIcon className="h-4 w-4 mr-2" />
@@ -338,6 +394,12 @@ export function AppSidebar({
             </Button>
           </div>
         </div>
+
+        {/* Pricing Modal */}
+        <PricingModal
+          isOpen={showPricingModal}
+          onClose={() => setShowPricingModal(false)}
+        />
       </div>
     </>
   );

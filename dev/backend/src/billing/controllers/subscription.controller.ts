@@ -16,6 +16,7 @@ import { Public } from '../../auth/decorators/public.decorator';
 import { SubscriptionService } from '../services/subscription.service';
 import { StripeService } from '../services/stripe.service';
 import { CurrencyService } from '../services/currency.service';
+import { PayPalService } from '../services/paypal.service';
 import { CreateCheckoutDto, ChangeTierDto, CreatePortalSessionDto } from '../dto';
 
 @Controller('subscriptions')
@@ -25,7 +26,89 @@ export class SubscriptionController {
     private subscriptionService: SubscriptionService,
     private stripeService: StripeService,
     private currencyService: CurrencyService,
+    private paypalService: PayPalService,
   ) {}
+
+  /**
+   * Get pricing for a currency
+   * GET /subscriptions/pricing/:currency
+   */
+  @Public()
+  @Get('pricing/:currency')
+  async getPricing(@Param('currency') currency: string) {
+    const currencyUpper = currency.toUpperCase();
+    const rates = await this.currencyService.getExchangeRates(currencyUpper);
+    
+    // Base USD prices
+    const basePrices = {
+      GROW: 5,
+      SCALE: 20,
+      ENTERPRISE: 200,
+    };
+
+    // Convert to target currency
+    const prices = {
+      currency: currencyUpper,
+      symbol: this.currencyService.getCurrencySymbol(currencyUpper),
+      tiers: {
+        STARTER: {
+          price: 0,
+          priceFormatted: this.currencyService.formatPrice(0, currencyUpper),
+          features: [
+            '10 practice tests per month',
+            '20 AI tutor messages per month',
+            'All exam categories',
+            'Basic analytics',
+          ],
+        },
+        GROW: {
+          price: Math.round(basePrices.GROW * rates[currencyUpper]),
+          priceFormatted: this.currencyService.formatPrice(
+            basePrices.GROW * rates[currencyUpper],
+            currencyUpper,
+          ),
+          features: [
+            'Unlimited practice tests',
+            'Unlimited AI tutor',
+            'Voice input & output',
+            '100 question generations/month',
+            'Advanced analytics',
+          ],
+        },
+        SCALE: {
+          price: Math.round(basePrices.SCALE * rates[currencyUpper]),
+          priceFormatted: this.currencyService.formatPrice(
+            basePrices.SCALE * rates[currencyUpper],
+            currencyUpper,
+          ),
+          features: [
+            'Everything in Grow',
+            'Unlimited question generations',
+            'API access',
+            'Priority support',
+            'Custom integrations',
+          ],
+        },
+        ENTERPRISE: {
+          price: Math.round(basePrices.ENTERPRISE * rates[currencyUpper]),
+          priceFormatted: this.currencyService.formatPrice(
+            basePrices.ENTERPRISE * rates[currencyUpper],
+            currencyUpper,
+          ),
+          features: [
+            'Everything in Scale',
+            'SSO (SAML/OAuth)',
+            'White-label branding',
+            'Dedicated support',
+            'Custom contracts',
+            'SLA guarantees',
+          ],
+        },
+      },
+    };
+
+    return prices;
+  }
 
   /**
    * Create checkout session for new subscription
@@ -37,6 +120,7 @@ export class SubscriptionController {
     const country = (dto.country || '').toUpperCase();
     const currency = (dto.currency || 'USD').toUpperCase();
     let provider: 'stripe' | 'paypal' = 'stripe';
+    const paypalSandboxEnabled = process.env.PAYPAL_SANDBOX_ENABLED === 'true' && !!process.env.PAYPAL_SANDBOX_CLIENT_ID;
 
     try {
       const mapJson = process.env.PAYMENT_PROVIDER_COUNTRY_MAP || '';
@@ -46,25 +130,20 @@ export class SubscriptionController {
       }
     } catch {}
 
-    if (provider === 'paypal') {
+    if (provider === 'paypal' && paypalSandboxEnabled) {
       // Use PayPal sandbox adapter and fallback to Stripe on error
       try {
-        const { CurrencyService } = await import('../services/currency.service');
-        const { PayPalService } = await import('../services/paypal.service');
-        const currencySvc = new CurrencyService();
-        const pp = new PayPalService();
-
         // Base prices in USD
         const basePrices: Record<string, number> = { STARTER: 0, GROW: 29, SCALE: 99 };
         const usd = basePrices[dto.tier] ?? 0;
-        const amount = await currencySvc.convertFromUSD(usd, currency);
+        const amount = await this.currencyService.convertFromUSD(usd, currency);
 
         if (amount <= 0) {
           // Free tier; no checkout, just return to success
           return { url: dto.successUrl };
         }
 
-        const result = await pp.createCheckoutSession({
+        const result = await this.paypalService.createCheckoutSession({
           amount,
           currency,
           successUrl: dto.successUrl,

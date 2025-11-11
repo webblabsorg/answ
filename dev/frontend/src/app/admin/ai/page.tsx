@@ -1,4 +1,6 @@
-import { Suspense, useEffect, useState } from 'react'
+"use client";
+
+import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'

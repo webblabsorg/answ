@@ -209,10 +209,6 @@ export default function HomePage() {
 
       {/* Pricing Modal */}
       <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
-      <PricingModal
-        isOpen={showPricingModal}
-        onClose={() => setShowPricingModal(false)}
-      />
     </div>
   );
 }

@@ -26,12 +26,12 @@ export default function AdminLayout({
   useEffect(() => {
     if (!user) {
       router.push('/login');
-    } else if (user.role !== 'ADMIN' && user.role !== 'INSTRUCTOR') {
+    } else if (user.role !== 'ADMIN') {
       router.push('/dashboard');
     }
   }, [user, router]);
 
-  if (!user || (user.role !== 'ADMIN' && user.role !== 'INSTRUCTOR')) {
+  if (!user || user.role !== 'ADMIN') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

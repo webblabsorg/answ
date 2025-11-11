@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RateLimitGuard } from '../guards/rate-limit.guard';
+import { QuotaGuard, RequireQuota } from '../../billing/guards/quota.guard';
 import { AITutorService, TutorRequest } from '../services/ai-tutor.service';
 import { ResponseCacheService } from '../services/response-cache.service';
 
@@ -26,6 +27,8 @@ export class TutorController {
    * POST /api/tutor/chat
    */
   @Post('chat')
+  @UseGuards(QuotaGuard)
+  @RequireQuota('ai_tutor', 1)
   async chat(@Request() req, @Body() body: Omit<TutorRequest, 'userId'>) {
     return this.tutorService.chat({
       userId: req.user.id,
@@ -38,6 +41,8 @@ export class TutorController {
    * POST /api/tutor/explain/:questionId
    */
   @Post('explain/:questionId')
+  @UseGuards(QuotaGuard)
+  @RequireQuota('ai_tutor', 1)
   async explainQuestion(
     @Request() req,
     @Param('questionId') questionId: string,
@@ -55,6 +60,8 @@ export class TutorController {
    * POST /api/tutor/study-tips
    */
   @Post('study-tips')
+  @UseGuards(QuotaGuard)
+  @RequireQuota('ai_tutor', 1)
   async getStudyTips(
     @Request() req,
     @Body() body: { examId: string; topic: string },

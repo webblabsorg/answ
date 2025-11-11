@@ -6,7 +6,8 @@ import * as compression from 'compression';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Enable access to rawBody for Stripe webhook signature verification
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   // Security headers
   app.use(helmet({

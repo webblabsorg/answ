@@ -31,6 +31,8 @@ import {
   Archive,
   Trash,
   ClipboardListIcon,
+  LightbulbIcon,
+  TrendingUpIcon,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -88,6 +90,11 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
     { name: 'Practice Tests', icon: FileTextIcon, path: '/dashboard', description: 'Take practice exams' },
     { name: 'Performance Insights', icon: BarChartIcon, path: '/insights', description: 'View your progress' },
     { name: 'Study Plan', icon: CalendarIcon, path: '/study-plan', description: 'Personalized learning path' },
+    { name: 'My Performance', icon: BarChartIcon, path: '/analytics', description: 'Track your performance' },
+    { name: 'Usage & Limits', icon: ClipboardListIcon, path: '/usage', description: 'Track usage and plan limits' },
+    { name: 'Billing & Invoices', icon: FileTextIcon, path: '/billing/invoices', description: 'Manage billing and invoices' },
+    { name: 'Organization', icon: UsersIcon, path: '/organization', description: 'Manage your org & teams' },
+    { name: 'Recommendations', icon: LightbulbIcon, path: '/recommendations', description: 'Personalized tips and upgrades' },
   ];
 
   const handleItemClick = (path?: string) => {
@@ -487,6 +494,26 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             </button>
             {adminOpen && (
               <div className="space-y-1 mt-2">
+                <button
+                  onClick={() => handleItemClick('/admin/analytics')}
+                  className="w-full flex items-start gap-3 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                >
+                  <BarChartIcon className="h-4 w-4 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-300 group-hover:text-white transition-colors">Analytics Dashboard</div>
+                    <div className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">Revenue & user analytics</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => handleItemClick('/admin/predictions')}
+                  className="w-full flex items-start gap-3 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                >
+                  <TrendingUpIcon className="h-4 w-4 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-300 group-hover:text-white transition-colors">Predictions</div>
+                    <div className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">Churn, forecast, upsell</div>
+                  </div>
+                </button>
                 <button
                   onClick={() => handleItemClick('/admin/review-queue')}
                   className="w-full flex items-start gap-3 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"

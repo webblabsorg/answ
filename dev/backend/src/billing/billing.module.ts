@@ -5,6 +5,9 @@ import { SubscriptionService } from './services/subscription.service';
 import { UsageTrackingService } from './services/usage-tracking.service';
 import { AnalyticsService } from './services/analytics.service';
 import { PredictionService } from './services/prediction.service';
+import { DunningService } from './services/dunning.service';
+import { RegionalPaymentService } from './services/regional-payment.service';
+import { TaxService } from './services/tax.service';
 import { CurrencyService } from './services/currency.service';
 import { PayPalService } from './services/paypal.service';
 import { SubscriptionController } from './controllers/subscription.controller';
@@ -12,14 +15,46 @@ import { WebhookController } from './controllers/webhook.controller';
 import { UsageController } from './controllers/usage.controller';
 import { AnalyticsController } from './controllers/analytics.controller';
 import { PredictionsController } from './controllers/predictions.controller';
+import { RevenueController } from './controllers/revenue.controller';
 import { QuotaGuard } from './guards/quota.guard';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [ConfigModule, PrismaModule, UsersModule],
-  controllers: [SubscriptionController, WebhookController, UsageController, AnalyticsController, PredictionsController],
-  providers: [StripeService, SubscriptionService, UsageTrackingService, AnalyticsService, PredictionService, CurrencyService, PayPalService, QuotaGuard],
-  exports: [StripeService, SubscriptionService, UsageTrackingService, AnalyticsService, PredictionService, CurrencyService, PayPalService, QuotaGuard],
+  controllers: [
+    SubscriptionController,
+    WebhookController,
+    UsageController,
+    AnalyticsController,
+    PredictionsController,
+    RevenueController,
+  ],
+  providers: [
+    StripeService,
+    SubscriptionService,
+    UsageTrackingService,
+    AnalyticsService,
+    PredictionService,
+    DunningService,
+    RegionalPaymentService,
+    TaxService,
+    CurrencyService,
+    PayPalService,
+    QuotaGuard,
+  ],
+  exports: [
+    StripeService,
+    SubscriptionService,
+    UsageTrackingService,
+    AnalyticsService,
+    PredictionService,
+    DunningService,
+    RegionalPaymentService,
+    TaxService,
+    CurrencyService,
+    PayPalService,
+    QuotaGuard,
+  ],
 })
 export class BillingModule {}

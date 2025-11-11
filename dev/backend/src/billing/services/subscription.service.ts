@@ -369,6 +369,18 @@ export class SubscriptionService {
   }
 
   /**
+   * Helper: Find userId by Stripe customer ID
+   */
+  async getUserIdByStripeCustomerId(customerId: string): Promise<string | null> {
+    if (!customerId) return null;
+    const user = await this.prisma.user.findFirst({
+      where: { stripe_customer_id: customerId },
+      select: { id: true },
+    });
+    return user?.id ?? null;
+  }
+
+  /**
    * Save invoice to database
    */
   async handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {

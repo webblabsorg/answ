@@ -14,12 +14,15 @@ import { MessageList } from './components/MessageList';
 import { ConversationSidebar } from './components/ConversationSidebar';
 import { VoiceInput } from './components/VoiceInput';
 import { SendIcon, BookOpenIcon, Loader2Icon } from 'lucide-react';
+import { UpgradePrompt } from '@/components/billing/UpgradePrompt';
 
 export default function TutorPage() {
   const [message, setMessage] = useState('');
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [examId, setExamId] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgradePayload, setUpgradePayload] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -61,6 +64,18 @@ export default function TutorPage() {
       queryClient.invalidateQueries({ queryKey: ['conversation', data.conversationId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       setMessage('');
+    },
+    onError: (error: any) => {
+      const status = error?.response?.status;
+      if (status === 403) {
+        setUpgradePayload({
+          reason: error.response?.data?.message,
+          usage: error.response?.data?.usage,
+          limits: error.response?.data?.limits,
+          featureType: 'ai_tutor',
+        });
+        setUpgradeOpen(true);
+      }
     },
   });
 
@@ -227,6 +242,15 @@ export default function TutorPage() {
           </div>
         </div>
       </div>
+
+      <UpgradePrompt
+        isOpen={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        reason={upgradePayload?.reason}
+        featureType={upgradePayload?.featureType}
+        usage={upgradePayload?.usage}
+        limits={upgradePayload?.limits}
+      />
     </div>
   );
 }

@@ -13,7 +13,11 @@ import { GradingModule } from './grading/grading.module';
 import { AdminModule } from './admin/admin.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { AIModule } from './ai/ai.module';
+import { BillingModule } from './billing/billing.module';
+import { EnterpriseModule } from './enterprise/enterprise.module';
+import { ComplianceModule } from './compliance/compliance.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -28,6 +32,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ]),
     PrismaModule,
     CacheModule,
+    ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
     ExamsModule,
@@ -37,6 +42,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AdminModule,
     AuditLogsModule,
     AIModule,
+    BillingModule,
+    EnterpriseModule,
+    ComplianceModule,
   ],
   providers: [
     {

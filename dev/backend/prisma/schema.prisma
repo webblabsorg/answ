@@ -27,6 +27,35 @@ enum SubscriptionTier {
   ENTERPRISE
 }
 
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum SSOProvider {
+  SAML
+  GOOGLE
+  MICROSOFT
+  OKTA
+  AUTH0
+  CUSTOM
+}
+
+enum SSOStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_SETUP
+}
+
 model User {
   id                 String              @id @default(cuid())
   email              String              @unique
@@ -34,12 +63,18 @@ model User {
   name               String
   role               UserRole            @default(TEST_TAKER)
   tier               SubscriptionTier    @default(STARTER)
+  stripe_customer_id String?             @unique
+  organization_role  OrganizationRole?
+  organization_id    String?
   is_verified        Boolean             @default(false)
   is_active          Boolean             @default(true)
   created_at         DateTime            @default(now())
   updated_at         DateTime            @updatedAt
   last_login_at      DateTime?
   // Relations
+  organization       Organization?       @relation("OrganizationMembers", fields: [organization_id], references: [id], onDelete: SetNull)
+  organization_owned Organization?       @relation("OrganizationOwner")
+  team_memberships   TeamMember[]
   test_sessions      TestSession[]
   attempts           Attempt[]
   bookmarks          Bookmark[]
@@ -49,9 +84,22 @@ model User {
   reviewed_questions GeneratedQuestion[] @relation("ReviewedQuestions")
   conversations      Conversation[]
   irt_profiles       IRTProfile[]
+  subscriptions      Subscription[]
+  usage_records      UsageRecord[]
+  sent_invites       Invite[]            @relation("InviteSender")
+  sso_logins         SSOLogin[]
+  dunning_attempts   DunningAttempt[]
+  // Compliance & API
+  created_api_keys   APIKey[]           @relation("CreatedAPIKeys")
+  user_permissions   UserPermission[]   @relation("UserPermissions")
+  granted_permissions UserPermission[]  @relation("GrantedPermissions")
+  integrity_events   IntegrityEvent[]   @relation("IntegrityEvents")
+  data_export_requests DataExportRequest[] @relation("DataExportRequests")
 
   @@index([email])
   @@index([role, tier])
+  @@index([stripe_customer_id])
+  @@index([organization_id])
   @@map("users")
 }
 
@@ -452,4 +500,445 @@ model IRTProfile {
   @@index([user_id])
   @@index([exam_id])
   @@map("irt_profiles")
+}
+
+// ============================================================================
+// Billing & Subscriptions (Phase 3)
+// ============================================================================
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  TRIALING
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  user_id                String
+  tier                   SubscriptionTier
+  status                 SubscriptionStatus
+  stripe_subscription_id String             @unique
+  stripe_price_id        String
+  stripe_customer_id     String
+  current_period_start   DateTime
+  current_period_end     DateTime
+  cancel_at_period_end   Boolean            @default(false)
+  canceled_at            DateTime?
+  trial_start            DateTime?
+  trial_end              DateTime?
+  created_at             DateTime           @default(now())
+  updated_at             DateTime           @updatedAt
+  user                   User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  dunning_attempts       DunningAttempt[]
+
+  @@index([user_id])
+  @@index([status])
+  @@index([stripe_subscription_id])
+  @@map("subscriptions")
+}
+
+model UsageRecord {
+  id           String   @id @default(cuid())
+  user_id      String
+  feature_type String // 'test', 'ai_tutor', 'question_generation', etc.
+  count        Int      @default(1)
+  period_start DateTime
+  period_end   DateTime
+  created_at   DateTime @default(now())
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, period_start])
+  @@index([feature_type])
+  @@map("usage_records")
+}
+
+model Invoice {
+  id                    String   @id @default(cuid())
+  stripe_invoice_id     String   @unique
+  stripe_customer_id    String
+  stripe_subscription_id String?
+  amount_due            Int // in cents
+  amount_paid           Int // in cents
+  currency              String   @default("usd")
+  status                String
+  invoice_pdf           String?
+  hosted_invoice_url    String?
+  period_start          DateTime
+  period_end            DateTime
+  created_at            DateTime @default(now())
+  paid_at               DateTime?
+
+  @@index([stripe_customer_id])
+  @@index([status])
+  @@index([created_at])
+  @@map("invoices")
+}
+// Add to end of schema.prisma after Invoice model
+
+// ============================================================================
+// Phase 4: Enterprise Features - Organizations & Teams
+// ============================================================================
+
+model Organization {
+  id                 String            @id @default(cuid())
+  name               String
+  slug               String            @unique
+  owner_id           String            @unique
+  domain             String?           @unique
+  logo_url           String?
+  billing_email      String?
+  // Billing & Tax
+  vat_id             String?           // VAT/Tax ID
+  tax_exempt         Boolean           @default(false)
+  billing_country    String?           // ISO country code
+  billing_address    String?
+  billing_city       String?
+  billing_postal     String?
+  // Settings
+  max_seats          Int               @default(10)
+  used_seats         Int               @default(0)
+  // White-label settings
+  custom_domain      String?
+  primary_color      String?
+  secondary_color    String?
+  logo_light_url     String?
+  logo_dark_url      String?
+  // Feature flags
+  sso_enabled        Boolean           @default(false)
+  api_access_enabled Boolean           @default(false)
+  custom_branding    Boolean           @default(false)
+  // Metadata
+  is_active          Boolean           @default(true)
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+  // Relations
+  owner              User              @relation("OrganizationOwner", fields: [owner_id], references: [id], onDelete: Cascade)
+  members            User[]            @relation("OrganizationMembers")
+  teams              Team[]
+  invites            Invite[]
+  sso_connections    SSOConnection[]
+  // Data residency & compliance
+  data_region        DataRegion        @default(US_EAST)
+  dpa_accepted       Boolean           @default(false)
+  dpa_accepted_at    DateTime?
+  audit_logs         AuditLog[]
+  api_keys           APIKey[]
+  user_permissions   UserPermission[]
+  immutable_audit_logs ImmutableAuditLog[]
+
+  @@index([slug])
+  @@index([owner_id])
+  @@index([domain])
+  @@map("organizations")
+}
+
+model Team {
+  id              String       @id @default(cuid())
+  organization_id String
+  name            String
+  description     String?      @db.Text
+  is_active       Boolean      @default(true)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  // Relations
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  members         TeamMember[]
+
+  @@index([organization_id])
+  @@map("teams")
+}
+
+model TeamMember {
+  id         String           @id @default(cuid())
+  team_id    String
+  user_id    String
+  role       OrganizationRole @default(MEMBER)
+  joined_at  DateTime         @default(now())
+  // Relations
+  team       Team             @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([team_id, user_id])
+  @@index([team_id])
+  @@index([user_id])
+  @@map("team_members")
+}
+
+model Invite {
+  id              String        @id @default(cuid())
+  organization_id String
+  email           String
+  role            OrganizationRole @default(MEMBER)
+  token           String        @unique
+  invited_by      String
+  status          InviteStatus  @default(PENDING)
+  expires_at      DateTime
+  accepted_at     DateTime?
+  created_at      DateTime      @default(now())
+  // Relations
+  organization    Organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  sender          User          @relation("InviteSender", fields: [invited_by], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@index([email])
+  @@index([token])
+  @@index([status])
+  @@map("invites")
+}
+// Add to end of schema.prisma after Invite model
+
+// ============================================================================
+// Phase 4: Enterprise Features - SSO & Authentication
+// ============================================================================
+
+model SSOConnection {
+  id              String      @id @default(cuid())
+  organization_id String
+  name            String
+  provider        SSOProvider
+  status          SSOStatus   @default(PENDING_SETUP)
+  // SAML Configuration
+  saml_entity_id      String?
+  saml_sso_url        String?
+  saml_certificate    String?   @db.Text
+  saml_sign_requests  Boolean   @default(false)
+  // OAuth Configuration
+  oauth_client_id     String?
+  oauth_client_secret String?
+  oauth_authorize_url String?
+  oauth_token_url     String?
+  oauth_userinfo_url  String?
+  // Domain Configuration
+  domains         String[]    @default([])
+  auto_provision  Boolean     @default(false)
+  default_role    OrganizationRole @default(MEMBER)
+  // Metadata
+  metadata        Json?
+  is_active       Boolean     @default(true)
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  last_used_at    DateTime?
+  // Relations
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  logins          SSOLogin[]
+
+  @@index([organization_id])
+  @@index([provider])
+  @@map("sso_connections")
+}
+
+model SSOLogin {
+  id                String        @id @default(cuid())
+  sso_connection_id String
+  user_id           String
+  nameID            String?
+  session_index     String?
+  attributes        Json?
+  ip_address        String?
+  user_agent        String?
+  created_at        DateTime      @default(now())
+  // Relations
+  sso_connection    SSOConnection @relation(fields: [sso_connection_id], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([sso_connection_id])
+  @@index([user_id])
+  @@index([created_at])
+  @@map("sso_logins")
+}
+enum DunningStatus {
+  PENDING
+  RECOVERED
+  EXHAUSTED
+}
+
+// Add new model at end of file
+model DunningAttempt {
+  id              String        @id @default(cuid())
+  user_id         String
+  subscription_id String
+  invoice_id      String
+  attempt_number  Int           @default(1)
+  failure_reason  String?
+  next_attempt_at DateTime
+  last_attempt_at DateTime?
+  status          DunningStatus @default(PENDING)
+  completed_at    DateTime?
+  created_at      DateTime      @default(now())
+  // Relations
+  user            User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  subscription    Subscription  @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([subscription_id])
+  @@index([status])
+  @@index([next_attempt_at])
+  @@map("dunning_attempts")
+}
+// Add new enums
+enum AuditAction {
+  USER_LOGIN
+  USER_LOGOUT
+  USER_CREATE
+  USER_UPDATE
+  USER_DELETE
+  ORG_CREATE
+  ORG_UPDATE
+  ORG_DELETE
+  SUBSCRIPTION_CREATE
+  SUBSCRIPTION_UPDATE
+  SUBSCRIPTION_CANCEL
+  SSO_LOGIN
+  SSO_CONFIG_UPDATE
+  API_KEY_CREATE
+  API_KEY_DELETE
+  ROLE_ASSIGN
+  PERMISSION_GRANT
+  DATA_EXPORT
+  DATA_DELETE
+  EXAM_START
+  EXAM_SUBMIT
+  INTEGRITY_VIOLATION
+}
+
+enum PermissionScope {
+  ORG_ADMIN
+  SEAT_ADMIN
+  INSTRUCTOR
+  REVIEWER
+  API_ACCESS
+  DATA_EXPORT
+  USER_MANAGEMENT
+  BILLING_ADMIN
+}
+
+enum DataRegion {
+  US_EAST
+  EU_WEST
+  AP_SOUTHEAST
+}
+
+// Immutable audit log model
+model ImmutableAuditLog {
+  id              String      @id @default(cuid())
+  organization_id String?
+  user_id         String?
+  action          AuditAction
+  resource_type   String
+  resource_id     String?
+  changes         Json?       // Before/after data
+  metadata        Json?       // IP, user agent, etc.
+  hash            String      // SHA-256 hash for integrity
+  previous_hash   String?     // Chain to previous log
+  timestamp       DateTime    @default(now())
+  // Relations
+  organization    Organization? @relation(fields: [organization_id], references: [id])
+  user            User?         @relation(fields: [user_id], references: [id])
+
+  @@index([organization_id, timestamp])
+  @@index([user_id, timestamp])
+  @@index([action])
+  @@index([timestamp])
+  @@map("audit_logs_immutable")
+}
+
+// API Key model
+model APIKey {
+  id              String   @id @default(cuid())
+  organization_id String
+  name            String
+  key_hash        String   @unique
+  scopes          String[] // Array of PermissionScope values
+  rate_limit      Int      @default(100)  // Requests per minute
+  daily_quota     Int      @default(10000)
+  is_active       Boolean  @default(true)
+  last_used_at    DateTime?
+  expires_at      DateTime?
+  created_by      String
+  created_at      DateTime @default(now())
+  // Relations
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  creator         User         @relation("CreatedAPIKeys", fields: [created_by], references: [id])
+  usage_records   APIKeyUsage[]
+
+  @@index([organization_id])
+  @@index([key_hash])
+  @@map("api_keys")
+}
+
+// API usage tracking
+model APIKeyUsage {
+  id              String   @id @default(cuid())
+  api_key_id      String
+  endpoint        String
+  method          String
+  status_code     Int
+  response_time   Int      // milliseconds
+  timestamp       DateTime @default(now())
+  // Relations
+  api_key         APIKey   @relation(fields: [api_key_id], references: [id], onDelete: Cascade)
+
+  @@index([api_key_id, timestamp])
+  @@index([timestamp])
+  @@map("api_key_usage")
+}
+
+// Permission assignment model
+model UserPermission {
+  id              String          @id @default(cuid())
+  user_id         String
+  organization_id String
+  scope           PermissionScope
+  granted_by      String
+  granted_at      DateTime        @default(now())
+  expires_at      DateTime?
+  // Relations
+  user            User            @relation("UserPermissions", fields: [user_id], references: [id], onDelete: Cascade)
+  organization    Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  granter         User            @relation("GrantedPermissions", fields: [granted_by], references: [id])
+
+  @@unique([user_id, organization_id, scope])
+  @@index([user_id])
+  @@index([organization_id])
+  @@map("user_permissions")
+}
+
+// Exam integrity tracking
+model IntegrityEvent {
+  id              String   @id @default(cuid())
+  test_session_id String
+  user_id         String
+  event_type      String   // tab_switch, clipboard_access, screenshot_attempt
+  severity        String   // low, medium, high
+  details         Json?
+  timestamp       DateTime @default(now())
+  // Relations
+  test_session    TestSession @relation(fields: [test_session_id], references: [id], onDelete: Cascade)
+  user            User        @relation("IntegrityEvents", fields: [user_id], references: [id])
+
+  @@index([test_session_id])
+  @@index([user_id])
+  @@index([timestamp])
+  @@map("integrity_events")
+}
+
+// GDPR data export requests
+model DataExportRequest {
+  id              String   @id @default(cuid())
+  user_id         String
+  request_type    String   // export, delete
+  status          String   // pending, processing, completed, failed
+  download_url    String?
+  expires_at      DateTime?
+  completed_at    DateTime?
+  created_at      DateTime @default(now())
+  // Relations
+  user            User     @relation("DataExportRequests", fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([status])
+  @@map("data_export_requests")
 }

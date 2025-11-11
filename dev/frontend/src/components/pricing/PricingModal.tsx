@@ -63,13 +63,28 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useAuthStore();
+  const [serverPrices, setServerPrices] = useState<Record<string, number> | null>(null);
 
-  const convertPrice = (usdPrice: number): string => {
-    const converted = usdPrice * selectedCurrency.rate;
+  // Fetch server pricing for selected currency to avoid client drift
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await apiClient.get(`/subscriptions/pricing/${selectedCurrency.code}`);
+        const map: Record<string, number> = {};
+        (res.data?.tiers || []).forEach((t: any) => { map[t.id] = t.price; });
+        setServerPrices(map);
+      } catch {
+        setServerPrices(null);
+      }
+    };
+    load();
+  }, [selectedCurrency.code]);
+
+  const formatAmount = (amount: number): string => {
     try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency: selectedCurrency.code }).format(converted);
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: selectedCurrency.code }).format(amount);
     } catch {
-      return `${selectedCurrency.symbol}${converted.toFixed(2)}`;
+      return `${selectedCurrency.symbol}${amount.toFixed(2)}`;
     }
   };
 
@@ -90,10 +105,17 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
         scale: 'SCALE',
       };
 
+      // derive best-effort country from locale (e.g., en-US -> US)
+      const lang = typeof window !== 'undefined' ? navigator.language : 'en-US';
+      const parts = lang.split('-');
+      const country = parts.length > 1 ? parts[1].toUpperCase() : undefined;
+
       const response = await apiClient.post('/subscriptions/checkout', {
         tier: tierMap[tier],
         successUrl: `${window.location.origin}/subscription/success`,
         cancelUrl: `${window.location.origin}/subscription/cancel`,
+        currency: selectedCurrency.code,
+        country,
       });
 
       // Redirect to Stripe checkout
@@ -238,14 +260,15 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
                 {/* Price */}
                 <div className="mb-6">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-sm">{selectedCurrency.symbol}</span>
+                  <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-bold">
-                      {convertPrice(plan.price)}
+                      {formatAmount(
+                        plan.id === 'starter'
+                          ? 0
+                          : (serverPrices?.[plan.id === 'growth' ? 'GROW' : 'SCALE'] ?? plan.price * selectedCurrency.rate)
+                      )}
                     </span>
-                    <span className="text-gray-400 text-sm">
-                      {selectedCurrency.code} / {plan.period}
-                    </span>
+                    <span className="text-gray-400 text-sm">/ {plan.period}</span>
                   </div>
                 </div>
 

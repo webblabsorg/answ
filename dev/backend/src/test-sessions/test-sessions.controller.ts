@@ -13,6 +13,7 @@ import { TestSessionsService } from './test-sessions.service';
 import { CreateTestSessionDto } from './dto/create-test-session.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { QuotaGuard, RequireQuota } from '../billing/guards/quota.guard';
 
 @ApiTags('Test Sessions')
 @Controller('test-sessions')
@@ -22,6 +23,8 @@ export class TestSessionsController {
   constructor(private readonly testSessionsService: TestSessionsService) {}
 
   @Post()
+  @UseGuards(QuotaGuard)
+  @RequireQuota('test', 1)
   @ApiOperation({ summary: 'Create a new test session' })
   create(@Request() req, @Body() createDto: CreateTestSessionDto) {
     return this.testSessionsService.create(req.user.id, createDto);

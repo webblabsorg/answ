@@ -18,7 +18,7 @@ export function CurrencyPicker() {
 
   useEffect(() => {
     // Try detect from locale (very rough)
-    const locale = typeof window !== 'undefined' ? navigator.language : 'en-US';
+    const locale = typeof window !== 'undefined' ? navigator.language.toLowerCase() : 'en-us';
     if (locale.includes('gb')) setCurrency({ code: 'GBP', symbol: '£', rate: 0.79 });
     if (locale.includes('de') || locale.includes('fr') || locale.includes('es')) setCurrency({ code: 'EUR', symbol: '€', rate: 0.92 });
     if (locale.includes('in')) setCurrency({ code: 'INR', symbol: '₹', rate: 83 });

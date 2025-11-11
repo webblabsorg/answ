@@ -14,6 +14,9 @@ export class CurrencyService {
     USD: 1,
     EUR: 0.92,
     GBP: 0.79,
+    CAD: 1.35,
+    AUD: 1.52,
+    JPY: 149,
     INR: 83,
     BRL: 5.6,
   };
