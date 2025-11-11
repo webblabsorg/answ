@@ -405,7 +405,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             <div className="ml-6 mt-2 space-y-1">
               {/* Project items */}
               <div className="space-y-1">
-                <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
+                <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick('/projects/homeworks')}>
                   <Pencil className="h-3 w-3" /> Homeworks
                 </button>
                 <button className="block text-left w-full text-xs text-gray-400 hover:text-white py-1 flex items-center gap-2" onClick={() => handleItemClick()}>
@@ -584,7 +584,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
             {user?.tier === 'SCALE' && (
               <button onClick={() => router.push('/upgrade')} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded" title="Upgrade Options">Upgrade Options</button>
             )}
-            <button onClick={() => router.push('/settings/personalization')} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded" title="Personalization Settings">Personalization Settings</button>
+            <button onClick={() => router.push('/settings')} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded" title="Settings">Settings</button>
             <button onClick={() => router.push('/help')} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded" title="Help / Support">Help / Support</button>
             <button onClick={() => { clearAuth(); setShowUserMenu(false); router.push('/'); }} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-900 rounded text-red-400" title="Logout">Logout</button>
           </div>
