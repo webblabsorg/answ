@@ -49,7 +49,11 @@ if (process.env.FEATURE_ADMIN !== 'false') baseImports.push(AdminModule);
 const dynamicRequire = (p: string) => (eval('require') as NodeRequire)(p);
 try {
   if (process.env.FEATURE_AI === 'true') {
-    baseImports.push(dynamicRequire('./ai/ai.module').AIModule);
+    try {
+      baseImports.push(dynamicRequire('./ai/ai.module').AIModule);
+    } catch (e1) {
+      baseImports.push(dynamicRequire('./_disabled_ai/ai.module').AIModule);
+    }
   }
 } catch (e) {
   console.log('AI module not available (optional feature)');
