@@ -63,6 +63,7 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
   const [chatQuery, setChatQuery] = useState('');
   
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'REVIEWER';
+  const isTeacher = user?.role === 'INSTRUCTOR';
 
   // Provide sample recent chats even for guests so the section is visible and scrollable
   const recentChats = [
@@ -447,6 +448,18 @@ export function CollapsibleSidebar({ isExpanded, onToggle, onNewChat, onAuthProm
                     <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">Track assignments</div>
                   </div>
                 </button>
+                {isAuthenticated && isTeacher && (
+                  <button
+                    className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
+                    onClick={() => router.push('/teacher/homework')}
+                  >
+                    <UsersIcon className="h-3 w-3 mt-0.5 text-gray-400 group-hover:text-white transition-colors" />
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-300 group-hover:text-white transition-colors">Teacher: Homework</div>
+                      <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">Dashboard, groups, reviews</div>
+                    </div>
+                  </button>
+                )}
                 <button
                   className="w-full flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-gray-900 transition-colors text-left group"
                   onClick={() => handleItemClick()}
