@@ -12,6 +12,8 @@ import { TestSessionsModule } from './test-sessions/test-sessions.module';
 import { GradingModule } from './grading/grading.module';
 import { AdminModule } from './admin/admin.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
+import { HomeworkModule } from './homework/homework.module';
+import { HealthModule } from './health/health.module';
 // Optional modules will be conditionally required below to avoid build-time resolution
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -34,6 +36,8 @@ const baseImports = [
   TestSessionsModule,
   GradingModule,
   AuditLogsModule,
+  HomeworkModule,
+  HealthModule,
 ];
 
 // Feature-flag optional modules for easier local dev
