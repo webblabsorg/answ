@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { apiClient } from "@/lib/api-client";
 
 interface AssignmentSummary { id: string; subject: string; title: string; due: string; status: string }
 interface AssignmentDetailData extends AssignmentSummary {
@@ -19,9 +20,28 @@ export function AssignmentDetail({ assignment, onBack }: AssignmentDetailProps) 
   const { data, isLoading, isError } = useQuery<AssignmentDetailData>({
     queryKey: ["homework-detail", assignment.id],
     queryFn: async () => {
-      const res = await fetch(`/api/homework/${assignment.id}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error('Failed to load homework detail');
-      return res.json();
+      const res = await apiClient.get(`/homework/${assignment.id}`);
+      const hw = res.data;
+      // Map backend fields to UI detail structure
+      const attachments = Array.isArray(hw.attachments)
+        ? hw.attachments
+        : [];
+      const objectives = Array.isArray(hw.objectives)
+        ? hw.objectives
+        : [];
+      const payload: AssignmentDetailData = {
+        id: hw.id,
+        subject: hw.subject,
+        title: hw.title,
+        due: new Date(hw.due_date).toLocaleDateString?.() || assignment.due,
+        status: assignment.status,
+        instructions: hw.description || '',
+        requirements: objectives,
+        autosave: { enabled: true, lastSaved: 'just now' },
+        attachments: attachments.map((name: any) => ({ name: String(name), size: 0 })),
+        history: [],
+      };
+      return payload;
     },
     staleTime: 30_000,
   });

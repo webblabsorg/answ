@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { AssignmentDetail } from '@/components/homework/AssignmentDetail';
+import { apiClient } from '@/lib/api-client';
+import { useAuthStore } from '@/store/auth-store';
 
 interface Stat { label: string; value: string | number }
 interface SimpleAssignment {
@@ -29,20 +31,30 @@ type DashboardData = {
 
 export function HomeworkPage() {
   const [selected, setSelected] = useState<SimpleAssignment | null>(null);
+  const { isAuthenticated } = useAuthStore();
 
   const { data, isLoading, isError } = useQuery<DashboardData>({
     queryKey: ['homework-dashboard'],
     queryFn: async () => {
-      const res = await fetch('/api/homework', { cache: 'no-store' });
-      if (!res.ok) throw new Error('Failed to load homework');
-      return res.json();
+      const res = await apiClient.get('/homework/dashboard');
+      return res.data as DashboardData;
     },
     staleTime: 30_000,
+    enabled: isAuthenticated,
   });
 
   if (selected) {
     return (
       <AssignmentDetail assignment={selected} onBack={() => setSelected(null)} />
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="w-full max-w-5xl mx-auto">
+        <h1 className="text-2xl font-bold mb-3">Homeworks</h1>
+        <div className="text-sm text-gray-400">Sign in to view your homework dashboard.</div>
+      </div>
     );
   }
 
