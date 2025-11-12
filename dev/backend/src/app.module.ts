@@ -15,7 +15,8 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { HomeworkModule } from './homework/homework.module';
 import { HealthModule } from './health/health.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
-import { RealtimeModule } from './realtime/realtime.module';
+import { EssaysModule } from './essays/essays.module';
+// import { RealtimeModule } from './realtime/realtime.module';
 // Optional modules will be conditionally required below to avoid build-time resolution
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -41,6 +42,7 @@ const baseImports = [
   HomeworkModule,
   HealthModule,
   SubscriptionsModule,
+  EssaysModule,
 ];
 
 // Feature-flag optional modules for easier local dev
@@ -62,7 +64,7 @@ try {
 
 try {
   if (process.env.FEATURE_REALTIME === 'true') {
-    baseImports.push(RealtimeModule);
+    baseImports.push(dynamicRequire('./realtime/realtime.module').RealtimeModule);
   }
 } catch (e) {
   console.log('Realtime module not available (optional feature)');
