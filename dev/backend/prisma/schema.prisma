@@ -96,6 +96,21 @@ model User {
   integrity_events   IntegrityEvent[]   @relation("IntegrityEvents")
   data_export_requests DataExportRequest[] @relation("DataExportRequests")
   immutable_audit_logs ImmutableAuditLog[]
+  // Homework relations
+  homeworks_created  Homework[]         @relation("TeacherHomework")
+  classes_taught     Class[]            @relation("TeacherClasses")
+  class_enrollments  ClassEnrollment[]  @relation("StudentEnrollments")
+  homework_submissions HomeworkSubmission[] @relation("StudentSubmissions")
+  group_memberships  HomeworkGroupMember[] @relation("GroupMemberships")
+  peer_reviews_given PeerReview[]       @relation("ReviewerPeerReviews")
+  calendar_syncs     CalendarSync[]     @relation("UserCalendarSync")
+  extension_requests ExtensionRequest[]
+
+  // Essays
+  essays             EssayProject[]       @relation("EssayOwner")
+  essay_revisions    EssayRevision[]
+  essay_comments     EssayComment[]
+  essay_shares       EssayShare[]
 
   @@index([email])
   @@index([role, tier])
@@ -629,6 +644,10 @@ model Organization {
   api_keys           APIKey[]
   user_permissions   UserPermission[]
   immutable_audit_logs ImmutableAuditLog[]
+  // Homework relations
+  homeworks          Homework[]
+  classes            Class[]
+  lms_integrations   LMSIntegration[]
 
   @@index([slug])
   @@index([owner_id])
@@ -942,4 +961,532 @@ model DataExportRequest {
   @@index([user_id])
   @@index([status])
   @@map("data_export_requests")
+}
+
+// ============================================================================
+// Homework & Assignment Management (Phase 3: Collaborative Learning)
+// ============================================================================
+
+enum HomeworkType {
+  ESSAY
+  SHORT_ANSWER
+  QUIZ
+  PROBLEM_SET
+  PROJECT
+  READING
+  VIDEO_SUBMISSION
+  FILE_UPLOAD
+  GROUP_PROJECT
+  PEER_REVIEW
+  OTHER
+}
+
+enum SubmissionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  UNDER_REVIEW
+  GRADED
+  RETURNED
+  RESUBMITTED
+}
+
+model Homework {
+  id                String            @id @default(cuid())
+  title             String
+  description       String            @db.Text
+  teacher_id        String
+  class_id          String?
+  organization_id   String?
+  subject           String
+  homework_type     HomeworkType
+  
+  // Dates
+  created_at        DateTime          @default(now())
+  published_at      DateTime?
+  due_date          DateTime
+  lock_date         DateTime?
+  
+  // Grading
+  points            Int               @default(100)
+  allow_late        Boolean           @default(false)
+  late_penalty      Float?
+  max_attempts      Int               @default(1)
+  show_correct      Boolean           @default(false)
+  
+  // Group settings (Phase 3)
+  is_group_assignment Boolean         @default(false)
+  group_size_min    Int?
+  group_size_max    Int?
+  allow_group_choice Boolean          @default(false)
+  
+  // Peer review settings (Phase 3)
+  requires_peer_review Boolean        @default(false)
+  peer_review_count Int?
+  peer_review_due_date DateTime?
+  
+  // AI settings
+  ai_assistance     Boolean           @default(true)
+  plagiarism_check  Boolean           @default(true)
+  ai_grading        Boolean           @default(false)
+  
+  // Content
+  attachments       Json?
+  rubric            Json?
+  objectives        String[]
+  
+  // Status
+  is_active         Boolean           @default(true)
+  updated_at        DateTime          @updatedAt
+  
+  // Relations
+  teacher           User              @relation("TeacherHomework", fields: [teacher_id], references: [id])
+  class             Class?            @relation(fields: [class_id], references: [id], onDelete: SetNull)
+  organization      Organization?     @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  submissions       HomeworkSubmission[]
+  groups            HomeworkGroup[]
+  peer_reviews      PeerReview[]
+  analytics         HomeworkAnalytics?
+  
+  @@index([teacher_id])
+  @@index([class_id])
+  @@index([organization_id])
+  @@index([due_date])
+  @@index([homework_type])
+  @@map("homeworks")
+}
+
+model Class {
+  id                String            @id @default(cuid())
+  name              String
+  subject           String
+  grade_level       String?
+  teacher_id        String
+  organization_id   String?
+  academic_year     String
+  is_active         Boolean           @default(true)
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+  
+  // Relations
+  teacher           User              @relation("TeacherClasses", fields: [teacher_id], references: [id])
+  organization      Organization?     @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  enrollments       ClassEnrollment[]
+  homeworks         Homework[]
+  
+  @@index([teacher_id])
+  @@index([organization_id])
+  @@map("classes")
+}
+
+model ClassEnrollment {
+  id                String            @id @default(cuid())
+  class_id          String
+  student_id        String
+  enrolled_at       DateTime          @default(now())
+  
+  // Accommodations
+  has_iep           Boolean           @default(false)
+  has_504           Boolean           @default(false)
+  accommodations    Json?
+  
+  class             Class             @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  student           User              @relation("StudentEnrollments", fields: [student_id], references: [id])
+  
+  @@unique([class_id, student_id])
+  @@index([student_id])
+  @@map("class_enrollments")
+}
+
+// Phase 3: Group Assignments
+model HomeworkGroup {
+  id                String            @id @default(cuid())
+  homework_id       String
+  name              String
+  created_at        DateTime          @default(now())
+  
+  // Relations
+  homework          Homework          @relation(fields: [homework_id], references: [id], onDelete: Cascade)
+  members           HomeworkGroupMember[]
+  submission        HomeworkSubmission?
+  
+  @@index([homework_id])
+  @@map("homework_groups")
+}
+
+model HomeworkGroupMember {
+  id                String            @id @default(cuid())
+  group_id          String
+  student_id        String
+  role              String            @default("member") // "leader" or "member"
+  joined_at         DateTime          @default(now())
+  contribution_score Float?
+  
+  // Relations
+  group             HomeworkGroup     @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  student           User              @relation("GroupMemberships", fields: [student_id], references: [id])
+  
+  @@unique([group_id, student_id])
+  @@index([student_id])
+  @@map("homework_group_members")
+}
+
+// Student Submission
+model HomeworkSubmission {
+  id                String            @id @default(cuid())
+  homework_id       String
+  student_id        String?
+  group_id          String?           @unique // For group submissions
+  
+  // Content
+  content           String?           @db.Text
+  files             Json?
+  word_count        Int?
+  
+  // Status
+  status            SubmissionStatus  @default(NOT_STARTED)
+  submitted_at      DateTime?
+  graded_at         DateTime?
+  
+  // Grading
+  score             Float?
+  max_score         Float?
+  rubric_scores     Json?
+  feedback          String?           @db.Text
+  teacher_comments  String?           @db.Text
+  ai_feedback       Json?
+  
+  // Flags
+  is_late           Boolean           @default(false)
+  plagiarism_score  Float?
+  ai_assisted       Boolean           @default(false)
+  ai_usage_log      Json?
+  
+  // Collaboration tracking (Phase 3)
+  edit_history      Json?             // Track who edited what
+  version_count     Int               @default(1)
+  
+  // Draft versions
+  draft_versions    Json?
+  
+  // Relations
+  homework          Homework          @relation(fields: [homework_id], references: [id], onDelete: Cascade)
+  student           User?             @relation("StudentSubmissions", fields: [student_id], references: [id])
+  group             HomeworkGroup?    @relation(fields: [group_id], references: [id])
+  peer_reviews_received PeerReview[]  @relation("ReviewedSubmissions")
+  peer_reviews_given PeerReview[]     @relation("ReviewerSubmissions")
+  extensions         ExtensionRequest[]
+  
+  @@unique([homework_id, student_id])
+  @@index([student_id])
+  @@index([group_id])
+  @@index([status])
+  @@map("homework_submissions")
+}
+
+// Phase 3: Peer Review System
+model PeerReview {
+  id                String            @id @default(cuid())
+  homework_id       String
+  reviewer_id       String
+  submission_id     String
+  
+  // Review content
+  rating            Int?              // 1-5 stars
+  feedback          String?           @db.Text
+  rubric_scores     Json?
+  strengths         String?           @db.Text
+  improvements      String?           @db.Text
+  
+  // Status
+  status            String            @default("pending") // pending, completed
+  submitted_at      DateTime?
+  created_at        DateTime          @default(now())
+  
+  // Relations
+  homework          Homework          @relation(fields: [homework_id], references: [id], onDelete: Cascade)
+  reviewer          User              @relation("ReviewerPeerReviews", fields: [reviewer_id], references: [id])
+  submission        HomeworkSubmission @relation("ReviewedSubmissions", fields: [submission_id], references: [id], onDelete: Cascade)
+  reviewer_submission HomeworkSubmission? @relation("ReviewerSubmissions", fields: [reviewer_submission_id], references: [id])
+  reviewer_submission_id String?
+  
+  @@unique([reviewer_id, submission_id])
+  @@index([homework_id])
+  @@index([reviewer_id])
+  @@index([submission_id])
+  @@map("peer_reviews")
+}
+
+// Phase 3: Advanced Analytics
+model HomeworkAnalytics {
+  id                String            @id @default(cuid())
+  homework_id       String            @unique
+  
+  // Completion metrics
+  total_assigned    Int               @default(0)
+  total_submitted   Int               @default(0)
+  total_graded      Int               @default(0)
+  completion_rate   Float?
+  on_time_rate      Float?
+  
+  // Performance metrics
+  avg_score         Float?
+  median_score      Float?
+  std_deviation     Float?
+  min_score         Float?
+  max_score         Float?
+  
+  // Time metrics
+  avg_time_spent    Int?              // seconds
+  avg_grading_time  Int?              // seconds
+  
+  // AI usage
+  ai_assist_usage   Float?            // percentage of students who used AI
+  avg_ai_requests   Float?
+  
+  // Collaboration metrics (Phase 3)
+  avg_group_size    Float?
+  collaboration_score Float?          // measure of equal participation
+  
+  // Updated timestamp
+  last_calculated   DateTime          @default(now())
+  
+  // Relations
+  homework          Homework          @relation(fields: [homework_id], references: [id], onDelete: Cascade)
+  
+  @@index([homework_id])
+  @@map("homework_analytics")
+}
+
+// Phase 3: Calendar Integration
+model CalendarSync {
+  id                String            @id @default(cuid())
+  user_id           String
+  provider          String            // google, apple, outlook
+  access_token      String            @db.Text
+  refresh_token     String?           @db.Text
+  token_expires_at  DateTime?
+  calendar_id       String?
+  is_active         Boolean           @default(true)
+  last_synced_at    DateTime?
+  created_at        DateTime          @default(now())
+  
+  user              User              @relation("UserCalendarSync", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, provider])
+  @@index([user_id])
+  @@map("calendar_syncs")
+}
+
+// Phase 3: LMS Integration (Google Classroom, Canvas, etc.)
+model LMSIntegration {
+  id                String            @id @default(cuid())
+  organization_id   String
+  provider          String            // google_classroom, canvas, moodle, etc.
+  access_token      String            @db.Text
+  refresh_token     String?           @db.Text
+  token_expires_at  DateTime?
+  config            Json?             // Provider-specific configuration
+  is_active         Boolean           @default(true)
+  last_synced_at    DateTime?
+  created_at        DateTime          @default(now())
+  
+  organization      Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  sync_logs         LMSSyncLog[]
+  
+  @@unique([organization_id, provider])
+  @@index([organization_id])
+  @@map("lms_integrations")
+}
+
+model LMSSyncLog {
+  id                String            @id @default(cuid())
+  integration_id    String
+  sync_type         String            // assignments, grades, students
+  status            String            // success, failed, partial
+  records_synced    Int               @default(0)
+  error_message     String?           @db.Text
+  created_at        DateTime          @default(now())
+  
+  integration       LMSIntegration    @relation(fields: [integration_id], references: [id], onDelete: Cascade)
+  
+  @@index([integration_id])
+  @@index([created_at])
+  @@map("lms_sync_logs")
+}
+
+// Extension requests for homework submissions
+enum ExtensionStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+model ExtensionRequest {
+  id             String           @id @default(cuid())
+  submission_id  String
+  student_id     String
+  reason         String?
+  status         ExtensionStatus  @default(PENDING)
+  requested_at   DateTime         @default(now())
+  approved_by    String?
+  approved_at    DateTime?
+  new_due_date   DateTime?
+  teacher_note   String?
+
+  submission     HomeworkSubmission @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+  student        User               @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@index([submission_id])
+  @@index([student_id])
+  @@map("extension_requests")
+}
+
+// ============================================================================
+// Essay Projects (Projects > Essays)
+// ============================================================================
+
+enum EssayStatus {
+  DRAFT
+  SUBMITTED
+  GRADED
+  ARCHIVED
+}
+
+enum EssayMode {
+  RESEARCH
+  WRITING
+}
+
+model EssayProject {
+  id              String       @id @default(cuid())
+  owner_id        String
+  title           String
+  subject         String?
+  status          EssayStatus  @default(DRAFT)
+  mode            EssayMode    @default(RESEARCH)
+  word_count      Int          @default(0)
+  citations_count Int          @default(0)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  submitted_at    DateTime?
+  graded_at       DateTime?
+  score           Float?
+  teacher_note    String?
+  organization_id String?
+
+  // Relations
+  owner           User         @relation("EssayOwner", fields: [owner_id], references: [id], onDelete: Cascade)
+  document        EssayDocument?
+  sources         EssaySource[]
+  citations       EssayCitation[]
+  revisions       EssayRevision[]
+  comments        EssayComment[]
+  shares          EssayShare[]
+
+  @@index([owner_id])
+  @@index([status])
+  @@index([organization_id])
+  @@map("essay_projects")
+}
+
+model EssayDocument {
+  id         String   @id @default(cuid())
+  project_id String   @unique
+  content    String?  @db.Text
+  format     String   @default("markdown")
+  autosave_rev Int    @default(1)
+  updated_at DateTime @updatedAt
+
+  project    EssayProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("essay_documents")
+}
+
+model EssaySource {
+  id          String   @id @default(cuid())
+  project_id  String
+  title       String
+  authors     Json?
+  venue       String?
+  year        Int?
+  url         String?
+  kind        String? // peer_reviewed, government, preprint, etc
+  credibility Int?    // 1-5
+  abstract    String? @db.Text
+  citation    Json?   // CSL/BibTeX-like
+  added_by    String?
+  saved       Boolean @default(true)
+  created_at  DateTime @default(now())
+
+  project     EssayProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  citations   EssayCitation[]
+
+  @@index([project_id])
+  @@map("essay_sources")
+}
+
+model EssayCitation {
+  id          String   @id @default(cuid())
+  project_id  String
+  source_id   String?
+  style       String   @default("APA7")
+  in_text     String
+  location    String? // e.g. paragraph index or range
+  page        String?
+  created_at  DateTime @default(now())
+
+  project     EssayProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  source      EssaySource? @relation(fields: [source_id], references: [id])
+
+  @@index([project_id])
+  @@index([source_id])
+  @@map("essay_citations")
+}
+
+model EssayRevision {
+  id          String   @id @default(cuid())
+  project_id  String
+  author_id   String
+  note        String?
+  content     String?  @db.Text
+  created_at  DateTime @default(now())
+
+  project     EssayProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  author      User         @relation(fields: [author_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@index([author_id])
+  @@map("essay_revisions")
+}
+
+model EssayComment {
+  id          String   @id @default(cuid())
+  project_id  String
+  author_id   String
+  text        String   @db.Text
+  selection   Json?
+  created_at  DateTime @default(now())
+
+  project     EssayProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  author      User         @relation(fields: [author_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@index([author_id])
+  @@map("essay_comments")
+}
+
+model EssayShare {
+  id          String   @id @default(cuid())
+  project_id  String
+  user_id     String
+  role        String   @default("VIEWER") // VIEWER, COMMENTER, TEACHER
+  created_at  DateTime @default(now())
+
+  project     EssayProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, user_id])
+  @@index([user_id])
+  @@map("essay_shares")
 }
